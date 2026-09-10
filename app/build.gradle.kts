@@ -6,7 +6,7 @@ android {
         applicationId = "br.com.beardedbr.mecanico"
         minSdk = 23
         targetSdk = 35
-        versionCode = 8
-        versionName = "8.0"
+        versionCode = 9
+        versionName = "9.0"
     }
 }
