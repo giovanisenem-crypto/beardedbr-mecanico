@@ -1,0 +1,77 @@
+name: Empilha Turbo - teste jogavel
+on:
+  push:
+    branches: [ "codex/empilha-turbo" ]
+    paths: [ "empilha-turbo/**", ".github/workflows/empilha-turbo.yml" ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verificar codigo e regras
+        run: |
+          node --check empilha-turbo/app/src/main/assets/core.js
+          node --check empilha-turbo/app/src/main/assets/game.js
+          node empilha-turbo/checks/core.test.cjs
+          python empilha-turbo/scripts/package.py
+      - name: Preparar navegador de teste
+        run: |
+          npm install --prefix /tmp/empilha-browser playwright@1.55.0
+          /tmp/empilha-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Jogar e verificar o prototipo
+        env:
+          NODE_PATH: /tmp/empilha-browser/node_modules
+        run: node empilha-turbo/checks/browser.cjs
+      - name: Compilar APK independente
+        working-directory: empilha-turbo
+        run: gradle assembleDebug
+      - name: Preparar APK
+        run: |
+          cp empilha-turbo/app/build/outputs/apk/debug/app-debug.apk empilha-output/Empilha_Turbo_TESTE.apk
+          sha256sum empilha-output/Empilha_Turbo_TESTE.apk empilha-output/Empilha_Turbo_TESTE.html > empilha-output/SHA256SUMS.txt
+      - name: Guardar arquivos de teste
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Empilha-Turbo-Teste
+          path: empilha-output/
+          retention-days: 30
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Empilha-Turbo-Teste
+          path: empilha-output
+      - name: Disponibilizar versao de teste
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="empilha-turbo-0.1-teste-r$GITHUB_RUN_NUMBER"
+          cat > /tmp/empilha-notas.md <<'NOTAS'
+          Empilha Turbo: novo jogo de corrida e entregas com empilhadeiras.
+          
+          Baixe Empilha_Turbo_TESTE.apk para instalar no Android, ou Empilha_Turbo_TESTE.html para abrir no navegador.
+          
+          Complete três entregas, use o turbo e melhore motor, pneus e garfos com créditos obtidos nas partidas.
+          Aplicativo independente: não substitui Mecânico de Aço.
+          Protótipo 0.1 — Desenvolvedor: Giovani Senem.
+          NOTAS
+          gh release create "$tag" empilha-output/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Empilha Turbo - prototipo 0.1 (teste)" --notes-file /tmp/empilha-notas.md --prerelease --latest=false

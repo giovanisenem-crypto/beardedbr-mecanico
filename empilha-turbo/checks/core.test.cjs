@@ -1,0 +1,14 @@
+const assert=require("node:assert/strict");
+const C=require("../app/src/main/assets/core.js");
+const wall=[{x:100,y:20,w:20,h:200}],bounds={w:500,h:300};
+let body={x:40,y:100};let r=C.moveCircle(body,400,0,10,wall,bounds);
+assert.equal(body.x,90,"high-speed movement must not tunnel through a wall");assert.equal(r.hitX,true);
+body={x:180,y:100};C.moveCircle(body,-350,0,10,wall,bounds);assert.equal(body.x,130,"reverse collision");
+body={x:80,y:70};C.moveCircle(body,100,60,10,wall,bounds);assert.equal(body.x,90);assert.equal(body.y,130,"wall sliding retains unblocked movement");
+body={x:250,y:100};C.moveCircle(body,0,-500,22,[],bounds);assert.equal(body.y,22,"world boundary");
+assert.equal(C.score(3,300,60,true),2820);assert.equal(C.score(1,80,-10,false),640);
+assert.equal(C.credits(3,300,true),149);assert.equal(C.credits(0,0,false),0);
+const clean=C.cleanSave({credits:-100,best:"bad",bestTime:-1,upgrades:{engine:99,tires:-3,forks:1.9},sound:false});
+assert.deepEqual(clean,{credits:0,best:0,bestTime:null,upgrades:{engine:3,tires:0,forks:1},sound:false});
+assert.equal(C.normalAngle(Math.PI*2+0.5).toFixed(4),"0.5000");
+console.log("PASS: movement, tunneling, sliding, boundaries, rewards and save validation.");
