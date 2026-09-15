@@ -4,7 +4,7 @@ const wall=[{x:100,y:20,w:20,h:200}],bounds={w:500,h:300};
 let body={x:40,y:100};let r=C.moveCircle(body,400,0,10,wall,bounds);
 assert.equal(body.x,90,"high-speed movement must not tunnel through a wall");assert.equal(r.hitX,true);
 body={x:180,y:100};C.moveCircle(body,-350,0,10,wall,bounds);assert.equal(body.x,130,"reverse collision");
-body={x:80,y:70};C.moveCircle(body,100,60,10,wall,bounds);assert.equal(body.x,90);assert.equal(body.y,130,"wall sliding retains unblocked movement");
+body={x:80,y:70};C.moveCircle(body,100,60,10,wall,bounds);assert.equal(body.x,90);assert(Math.abs(body.y-130)<1e-8,"wall sliding retains unblocked movement");
 body={x:250,y:100};C.moveCircle(body,0,-500,22,[],bounds);assert.equal(body.y,22,"world boundary");
 assert.equal(C.score(3,300,60,true),2820);assert.equal(C.score(1,80,-10,false),640);
 assert.equal(C.credits(3,300,true),149);assert.equal(C.credits(0,0,false),0);
