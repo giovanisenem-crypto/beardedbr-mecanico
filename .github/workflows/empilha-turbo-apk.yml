@@ -1,0 +1,39 @@
+name: Empilha Turbo - pacote somente APK
+on:
+  push:
+    branches: [ "codex/empilha-turbo" ]
+    paths: [ ".github/workflows/empilha-turbo-apk.yml" ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Obter e conferir o instalador publicado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p apk-only
+          gh release download empilha-turbo-0.1-teste-r2 --repo "$GITHUB_REPOSITORY" --pattern Empilha_Turbo_TESTE.apk --dir apk-only
+          echo "db80c1a43cf7619c4cf71f3881ceae44fcfecd1716d3a58921626380f7f90791  apk-only/Empilha_Turbo_TESTE.apk" | sha256sum --check -
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          root = Path("apk-only")
+          assert [p.name for p in root.iterdir()] == ["Empilha_Turbo_TESTE.apk"]
+          with zipfile.ZipFile(root / "Empilha_Turbo_TESTE.apk") as apk:
+              assert apk.testzip() is None
+              assert "AndroidManifest.xml" in apk.namelist()
+              assert "classes.dex" in apk.namelist()
+          print("Pacote verificado: somente Empilha_Turbo_TESTE.apk")
+          PY
+      - name: Guardar somente o APK para entrega
+        uses: actions/upload-artifact@v4
+        with:
+          name: Empilha-Turbo-Somente-APK
+          path: apk-only/Empilha_Turbo_TESTE.apk
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
