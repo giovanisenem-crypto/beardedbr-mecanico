@@ -9,7 +9,8 @@
     loading: document.querySelector('#loading'), intro: document.querySelector('#intro'),
     hud: document.querySelector('#hud'), controls: document.querySelector('#controls'),
     status: document.querySelector('#status'), fps: document.querySelector('#fps'),
-    message: document.querySelector('#message'), messageText: document.querySelector('#message div')
+    sound: document.querySelector('#sound'), message: document.querySelector('#message'),
+    messageText: document.querySelector('#message div')
   };
   const backgroundSources = [
     'art/forge_stage.webp', 'art/forge_stage_02.webp', 'art/forge_stage_03.webp',
@@ -19,15 +20,17 @@
   const backgrounds = backgroundSources.map(() => new Image());
   const heroSheet = new Image();
   const pressSprite = new Image();
+  const sentinelSprite = new Image();
   let loaded = 0;
   const ready = () => {
-    if (++loaded === backgrounds.length + 2) setTimeout(() => {
+    if (++loaded === backgrounds.length + 3) setTimeout(() => {
       ui.loading.classList.add('hidden'); ui.intro.classList.remove('hidden'); draw();
     }, 650);
   };
   backgrounds.forEach((image, i) => { image.onload = ready; image.src = backgroundSources[i]; });
   heroSheet.onload = ready; heroSheet.src = 'art/mechanic_sheet.webp';
   pressSprite.onload = ready; pressSprite.src = 'art/hydraulic_press.webp';
+  sentinelSprite.onload = ready; sentinelSprite.src = 'art/sentinel.webp';
 
   // Every collider follows a visible steel surface in one of the seven background panels.
   const platforms = [
@@ -48,6 +51,13 @@
   const spawn = { x: 165, y: 548 };
   const checkpoints = [{ x: W * 2 + 918, y: 548 }, { x: W * 4 + 1118, y: 548 }];
   const presses = [{ x: W * 5 + 850, phase: 0, wasDown: false }];
+  const enemies = [
+    { x: W + 785, min: W + 660, max: W + 950, y: 548, dir: 1, alive: true },
+    { x: W * 2 + 840, min: W * 2 + 690, max: W * 2 + 1065, y: 548, dir: -1, alive: true },
+    { x: W * 3 + 1390, min: W * 3 + 1240, max: W * 4 - 75, y: 548, dir: 1, alive: true },
+    { x: W * 4 + 1070, min: W * 4 + 970, max: W * 4 + 1170, y: 548, dir: -1, alive: true },
+    { x: W * 6 + 760, min: W * 6 + 625, max: W * 6 + 905, y: 548, dir: 1, alive: true }
+  ];
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
   const keys = { left: false, right: false, jump: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
@@ -57,8 +67,10 @@
   const smoke = Array.from({ length: 22 }, (_, i) => ({
     x: (i * 617 + 300) % WORLD_W, y: 510 - (i % 4) * 48, phase: i * .7, size: 65 + (i % 4) * 24
   }));
-  let playing = false, paused = false, last = 0, deaths = 0, won = false, cameraX = 0, checkpointIndex = -1;
+  const bursts = [];
+  let playing = false, paused = false, last = 0, deaths = 0, defeats = 0, won = false, cameraX = 0, checkpointIndex = -1;
   let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
+  let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
   let fpsClock = 0, fpsFrames = 0;
 
   function pressState(press) {
@@ -80,19 +92,42 @@
       sirenOscillator = audioContext.createOscillator(); sirenGain = audioContext.createGain();
       sirenOscillator.type = 'sine'; sirenGain.gain.value = 0;
       sirenOscillator.connect(sirenGain).connect(audioContext.destination); sirenOscillator.start();
+      musicGain = audioContext.createGain(); musicGain.gain.value = .34;
+      musicGain.connect(audioContext.destination);
+      musicTimer = setInterval(playMusicStep, 268);
     } catch (_) { audioContext = null; }
+  }
+  function tone(frequency, duration, type, volume) {
+    if (!audioContext || !musicGain || !soundEnabled || paused || !playing) return;
+    const now = audioContext.currentTime, oscillator = audioContext.createOscillator(), gain = audioContext.createGain();
+    oscillator.type = type; oscillator.frequency.setValueAtTime(frequency, now);
+    gain.gain.setValueAtTime(.0001, now); gain.gain.exponentialRampToValueAtTime(volume, now + .018);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+    oscillator.connect(gain).connect(musicGain); oscillator.start(now); oscillator.stop(now + duration + .03);
+  }
+  function playMusicStep() {
+    const bass = [55, 55, 65.41, 73.42, 55, 82.41, 73.42, 65.41, 49, 49, 55, 65.41, 49, 73.42, 65.41, 55];
+    const step = musicStep++ % bass.length;
+    tone(bass[step], .22, 'sawtooth', .032);
+    if (step % 4 === 0) tone(42, .16, 'sine', .065);
+    if (step % 4 === 2) tone(bass[step] * 4, .09, 'triangle', .012);
+    if (step === 7 || step === 15) tone(bass[step] * 3, .42, 'triangle', .016);
+  }
+  function setAudioLevel() {
+    if (!audioContext || !musicGain) return;
+    musicGain.gain.setTargetAtTime(soundEnabled && !paused ? .34 : 0, audioContext.currentTime, .08);
   }
   function updateSiren(warning) {
     if (!audioContext || !sirenGain || !sirenOscillator) return;
     const now = audioContext.currentTime;
-    sirenGain.gain.setTargetAtTime(warning && !paused ? .012 : 0, now, .11);
+    sirenGain.gain.setTargetAtTime(warning && !paused && soundEnabled ? .012 : 0, now, .11);
     if (warning) sirenOscillator.frequency.setValueAtTime(430 + Math.sin(pressClock * 5) * 70, now);
   }
 
   function sector() { return Math.min(7, Math.floor(player.x / W) + 1); }
   function updateHud() {
     const names = ['PISO DE FUNDIÇÃO', 'PASSARELAS', 'LAMINAÇÃO', 'TORRE VERTICAL', 'LINHA DE FUNDIÇÃO', 'SALÃO DE PRENSAS', 'PORTÃO DA FORJA'];
-    ui.status.textContent = `SETOR 0${sector()} · ${names[sector() - 1]} · QUEDAS ${deaths}`;
+    ui.status.textContent = `SETOR 0${sector()} · ${names[sector() - 1]} · SUCATA ${defeats}/${enemies.length} · QUEDAS ${deaths}`;
   }
   function reset(showText = false) {
     const safe = checkpointIndex >= 0 ? checkpoints[checkpointIndex] : spawn;
@@ -114,6 +149,16 @@
     sparks.forEach(s => {
       s.life += dt * .48; s.x += s.vx * dt; s.y += s.vy * dt;
       if (s.life > 1 || s.y < 120) { s.life = 0; s.y = 570; s.x = (s.x + 739) % WORLD_W; }
+    });
+    for (let i = bursts.length - 1; i >= 0; i--) {
+      const b = bursts[i]; b.life -= dt; b.x += b.vx * dt; b.y += b.vy * dt; b.vy += 980 * dt;
+      if (b.life <= 0) bursts.splice(i, 1);
+    }
+  }
+  function burstAt(x, y) {
+    for (let i = 0; i < 18; i++) bursts.push({
+      x, y, vx: (Math.random() - .5) * 520, vy: -160 - Math.random() * 420,
+      life: .35 + Math.random() * .4, size: 3 + Math.random() * 5
     });
   }
   function update(dt) {
@@ -139,6 +184,25 @@
       if (!supported) player.grounded = false;
     }
 
+    let sentinelHit = false;
+    enemies.forEach(enemy => {
+      if (!enemy.alive) return;
+      enemy.x += enemy.dir * 82 * dt;
+      if (enemy.x <= enemy.min) { enemy.x = enemy.min; enemy.dir = 1; }
+      if (enemy.x >= enemy.max) { enemy.x = enemy.max; enemy.dir = -1; }
+      const eLeft = enemy.x - 62, eRight = enemy.x + 62, eTop = enemy.y - 126;
+      const pLeft = player.x - player.w * .3, pRight = player.x + player.w * .3, pTop = player.y - player.h * .86;
+      if (pRight > eLeft && pLeft < eRight && player.y > eTop + 10 && pTop < enemy.y - 8) {
+        if (player.vy > 120 && prevFoot <= eTop + 28) {
+          enemy.alive = false; defeats++; player.y = eTop; player.vy = -690; player.grounded = false;
+          burstAt(enemy.x, eTop + 48); shake = 8; flash('SENTINELA DESTRUÍDO', 700); updateHud();
+        } else sentinelHit = true;
+      }
+    });
+    if (sentinelHit) {
+      deaths++; updateSiren(false); reset(false); flash('ATINGIDO PELO SENTINELA — RETORNANDO AO CHECKPOINT', 1100); return;
+    }
+
     if (player.y > H + 180) { deaths++; updateSiren(false); reset(true); return; }
     const nextCheckpoint = checkpoints[checkpointIndex + 1];
     if (nextCheckpoint && player.x > nextCheckpoint.x - 70 && player.grounded) {
@@ -160,7 +224,7 @@
     }
     if (!won && player.x > WORLD_W - 205 && player.grounded) {
       won = true; player.vx = 0; flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 2600);
-      ui.status.textContent = `FASE 1 CONCLUÍDA · QUEDAS ${deaths}`;
+      ui.status.textContent = `FASE 1 CONCLUÍDA · SUCATA ${defeats}/${enemies.length} · QUEDAS ${deaths}`;
     }
 
     const desiredCamera = Math.max(0, Math.min(WORLD_W - W, player.x - W * .34));
@@ -193,7 +257,25 @@
       ctx.globalAlpha = Math.sin(s.life * Math.PI) * .8; ctx.fillStyle = '#ff9b31';
       ctx.fillRect(x, s.y, s.size, s.size * 3);
     });
+    bursts.forEach(b => {
+      const x = b.x - cameraX; ctx.globalAlpha = Math.min(1, b.life / .22);
+      ctx.fillStyle = '#ffb238'; ctx.fillRect(x, b.y, b.size, b.size * 2.4);
+    });
     ctx.restore();
+  }
+  function drawEnemies() {
+    if (!sentinelSprite.complete) return;
+    enemies.forEach((enemy, i) => {
+      if (!enemy.alive) return;
+      const x = enemy.x - cameraX; if (x < -160 || x > W + 160) return;
+      const bob = Math.sin(performance.now() * .004 + i) * 2;
+      ctx.save(); ctx.translate(x, enemy.y + bob);
+      if (enemy.dir < 0) ctx.scale(-1, 1);
+      ctx.drawImage(sentinelSprite, -72, -138, 144, 138);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(255,102,18,${.12 + Math.sin(performance.now() * .008 + i) * .04})`;
+      ctx.beginPath(); ctx.arc(42, -85, 25, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    });
   }
   function drawPresses() {
     if (!pressSprite.complete) return;
@@ -229,6 +311,7 @@
       if (image.complete && x < W && x > -W) ctx.drawImage(image, x, 0, W, H);
     });
     drawAtmosphere();
+    drawEnemies();
     if (heroSheet.complete) drawHero();
     drawPresses();
     const vignette = ctx.createRadialGradient(W / 2, H / 2, 180, W / 2, H / 2, 1050);
@@ -256,7 +339,14 @@
     ui.intro.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
     reset(); playing = true; flash('ATRAVESSE OS SETE SETORES', 1350);
   });
-  document.querySelector('#pause').addEventListener('click', () => { paused = !paused; if (paused) updateSiren(false); flash(paused ? 'PAUSADO' : 'CONTINUAR', 700); });
+  document.querySelector('#sound').addEventListener('click', () => {
+    soundEnabled = !soundEnabled; ui.sound.textContent = soundEnabled ? '♪' : '×';
+    setAudioLevel(); if (!soundEnabled) updateSiren(false);
+    flash(soundEnabled ? 'SOM LIGADO' : 'SOM DESLIGADO', 650);
+  });
+  document.querySelector('#pause').addEventListener('click', () => {
+    paused = !paused; if (paused) updateSiren(false); setAudioLevel(); flash(paused ? 'PAUSADO' : 'CONTINUAR', 700);
+  });
   addEventListener('keydown', e => { if (e.key === 'ArrowLeft') keys.left = true; if (e.key === 'ArrowRight') keys.right = true; if (['ArrowUp',' '].includes(e.key)) keys.jump = true; });
   addEventListener('keyup', e => { if (e.key === 'ArrowLeft') keys.left = false; if (e.key === 'ArrowRight') keys.right = false; if (['ArrowUp',' '].includes(e.key)) keys.jump = false; });
   window.ForjaGame = { back() { if (playing) { paused = true; flash('PAUSADO'); return true; } return false; } };
