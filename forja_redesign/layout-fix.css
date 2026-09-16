@@ -284,6 +284,39 @@ header #sound:not(.sound-on) {
 .effect-toast.show { animation: effectToast 1.5s ease both; }
 @keyframes effectToast { 12%,72% { opacity:1; transform:translate(-50%,0) scale(1); } 100% { opacity:0; transform:translate(-50%,-12px) scale(.96); } }
 
+.play-stage {
+  position: fixed;
+  z-index: 170;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+  background: radial-gradient(circle,#18393dcc 0 18%,#020506df 68%);
+  opacity: 1;
+  transition: opacity .28s ease;
+}
+.play-stage.enemy-play { background:radial-gradient(circle,#4a1422d9 0 18%,#020506e8 68%); }
+.play-stage.flying { opacity:.18; }
+.play-stage>b { color:var(--deck-color,#68efff);font-size:11px;letter-spacing:2px;text-shadow:0 0 12px currentColor,0 3px 5px #000; }
+.play-stage.enemy-play>b { color:var(--enemy-color,#ff5d70); }
+.play-stage p { width:min(82vw,390px);margin:0;padding:7px 10px;border:1px solid #8b7045;background:#081315e8;color:#f6e5bd;font-size:10px;font-weight:800;line-height:13px;text-align:center;box-shadow:0 6px 14px #000b; }
+#playStageCard { display:flex;align-items:center;justify-content:center;width:190px;height:285px;perspective:700px; }
+#playStageCard .battle-card { flex:0 0 174px;width:174px;height:260px;border-width:4px;border-radius:11px;box-shadow:0 0 28px var(--frame),0 20px 30px #000;animation:battleReveal .55s cubic-bezier(.2,.8,.2,1); }
+#playStageCard .battle-card .card-art { height:158px; }
+#playStageCard .battle-card .rarity { top:146px;font-size:11px; }
+#playStageCard .battle-card .card-copy { height:98px;padding:7px; }
+#playStageCard .battle-card .card-copy b { font-size:13px;line-height:15px; }
+#playStageCard .battle-card .card-copy small { font-size:8px; }
+#playStageCard .battle-card .card-copy em { margin-top:5px;height:auto;font-size:10px;line-height:12px; }
+#playStageCard .battle-card .power { width:44px;height:44px;font-size:20px; }
+@keyframes battleReveal { 0%{opacity:0;transform:scale(.35) rotateY(85deg)}65%{opacity:1;transform:scale(1.08) rotateY(-7deg)}100%{transform:scale(1) rotateY(0)} }
+.lane-effect { position:absolute;z-index:25;left:50%;top:50%;padding:4px 8px;border:2px solid currentColor;border-radius:14px;background:#071012eb;color:var(--deck-color,#00eaff);font:bold 11px Arial;white-space:nowrap;pointer-events:none;text-shadow:0 0 7px currentColor;box-shadow:0 0 16px currentColor;animation:laneEffect 1.25s ease-out both; }
+.enemy-rows .lane-effect { color:var(--enemy-color,#ff304f); }
+@keyframes laneEffect { 0%{opacity:0;transform:translate(-50%,20px) scale(.5)}18%,68%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}100%{opacity:0;transform:translate(-50%,-85px) scale(.85)} }
+
 /* Moldura responsiva: somente nas bordas e sempre atrás da interface. */
 .table-frame {
   position: absolute;
