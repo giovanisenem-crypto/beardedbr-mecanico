@@ -283,6 +283,41 @@ header #sound:not(.sound-on) {
 .effect-toast.show { animation: effectToast 1.5s ease both; }
 @keyframes effectToast { 12%,72% { opacity:1; transform:translate(-50%,0) scale(1); } 100% { opacity:0; transform:translate(-50%,-12px) scale(.96); } }
 
+/* Quatro molduras industriais sorteadas a cada partida. */
+.table-frame { position:absolute; z-index:2; inset:2px; border:4px solid var(--table-a,#b86b24); border-radius:7px; box-shadow:inset 0 0 0 2px #080b0c,inset 0 0 20px var(--table-glow,#ff8b1f66),0 0 12px var(--table-glow,#ff8b1f66); pointer-events:none; }
+.table-frame:before,.table-frame:after { content:""; position:absolute; left:12px; right:12px; height:6px; border:1px solid var(--table-b,#ffd36a); background:repeating-linear-gradient(90deg,var(--table-a) 0 18px,#101719 18px 27px); box-shadow:0 0 8px var(--table-glow); }
+.table-frame:before { top:38px; }.table-frame:after { bottom:3px; }
+.table-frame span { position:absolute; z-index:4; top:38px; left:50%; transform:translate(-50%,-50%); padding:2px 9px; white-space:nowrap; border:1px solid var(--table-b); background:#091113; color:var(--table-b); font:900 6px/9px Arial; letter-spacing:1.5px; }
+.game-screen.frame-fornalha { --table-a:#b76019;--table-b:#ffd067;--table-glow:#ff721f7d; }
+.game-screen.frame-cobalto { --table-a:#078fa8;--table-b:#79f4ff;--table-glow:#00d9ff80; }
+.game-screen.frame-hidraulica { --table-a:#b41f32;--table-b:#ff8b71;--table-glow:#ff254d80; }
+.game-screen.frame-reator { --table-a:#7e32c8;--table-b:#f1a3ff;--table-glow:#c83cff80; }
+.game-screen.frame-cobalto .game-bg { filter:saturate(.88) hue-rotate(10deg); }
+.game-screen.frame-hidraulica .game-bg { filter:saturate(1.05) sepia(.12); }
+.game-screen.frame-reator .game-bg { filter:saturate(.95) hue-rotate(300deg); }
+header,.score-panel,.rows,.belt,.card-info,.history-bar,.action-row,.hand { z-index:3; }
+
+.history-bar { position:relative; z-index:3; width:100%; min-height:29px; display:grid; grid-template-columns:auto 1fr auto; gap:6px; align-items:center; padding:4px 7px; border:1px solid #87622f; border-left:3px solid var(--table-b,#ffd36a); background:#091719e8; color:#e5d5b0; text-align:left; }
+.history-bar span { color:var(--table-b,#ffd36a); font-size:7px; font-weight:900; }.history-bar b { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:7px; }.history-bar i { color:#aab9b5; font:normal 6px Arial; }
+.slots .small-card { cursor:pointer; outline:1px solid transparent; }.slots .small-card:active { transform:scale(1.35); filter:brightness(1.4); }.slots .small-card:after { content:"+"; position:absolute; right:1px; bottom:0; z-index:5; width:9px; height:9px; display:grid; place-items:center; border-radius:50%; background:#05090acc; color:#fff3b4; font:bold 8px Arial; }
+
+.inspect-overlay { position:absolute; z-index:180; inset:0; display:flex; align-items:center; justify-content:center; padding:18px; background:radial-gradient(circle,#173339aa,#020506f2 70%); backdrop-filter:blur(5px); }
+.inspect-panel,.history-panel { position:relative; width:min(94vw,430px); max-height:94dvh; padding:17px 15px 12px; overflow:auto; border:3px solid var(--table-b,#f1b951); border-radius:8px; background:linear-gradient(145deg,#13272aed,#071012f7); box-shadow:0 0 34px var(--table-glow,#f5a62366),0 18px 36px #000; text-align:center; }
+.inspect-close { position:absolute; z-index:5; top:7px; right:7px; width:32px; height:32px; border:1px solid #f0bd61; border-radius:50%; background:#1b2426; color:#ffe0a0; font-size:22px; }
+.inspect-panel>small,.history-panel>small { color:#efbd61; font:900 8px Arial; letter-spacing:2px; }.enemy-label { color:#ff6d7d!important; }
+#inspectCardHost { display:flex; justify-content:center; margin:8px 0; }
+#inspectCardHost .inspect-card { flex:0 0 190px; width:190px; height:284px; border-width:4px; border-radius:11px; box-shadow:0 0 24px var(--frame),0 15px 22px #000; }
+#inspectCardHost .inspect-card .card-art { height:175px; }
+#inspectCardHost .inspect-card .power { width:46px;height:46px;font-size:21px; }
+#inspectCardHost .inspect-card .flag { padding:5px;font-size:10px; }
+#inspectCardHost .inspect-card .rarity { top:161px;font-size:11px; }
+#inspectCardHost .inspect-card .card-copy { height:105px;padding:8px; }
+#inspectCardHost .inspect-card .card-copy b { font-size:14px;line-height:16px;white-space:normal; }
+#inspectCardHost .inspect-card .card-copy small { font-size:9px;margin-top:3px; }
+#inspectCardHost .inspect-card .card-copy em { font-size:10px;line-height:13px;height:auto;margin-top:6px; }
+.inspect-details { display:grid; grid-template-columns:88px 1fr; gap:5px 8px; padding:8px; border:1px solid #7a6036; background:#091416; text-align:left; }.inspect-details b { color:#ffc75f;font-size:8px; }.inspect-details p { margin:0;color:#e9dfc8;font-size:9px;line-height:12px; }.inspect-panel>span,.history-panel>span { display:block;margin-top:8px;color:#8e9c99;font-size:7px; }
+.history-panel h2 { margin:4px 0 12px;color:#ffd16d;font-size:18px; }.history-list { display:flex; flex-direction:column; gap:6px; max-height:68dvh; overflow:auto; text-align:left; }.history-list div { padding:7px 9px;border-left:3px solid var(--deck-color,#00eaff);background:#112124; }.history-list div.enemy-log { border-color:var(--enemy-color,#ff304f); }.history-list small,.history-list b { display:inline;font-size:8px; }.history-list small { margin-right:7px;color:#8ceee1; }.history-list .enemy-log small { color:#ff8895; }.history-list b { color:#ffd171; }.history-list p { margin:3px 0 0;color:#e5dcc8;font-size:9px;line-height:12px; }.empty-log { text-align:center;color:#a9aaa3; }
+
 @media (max-height: 650px) {
   .menu-screen { justify-content: flex-start; overflow-y: auto; }
   .faction-card { height: 132px; }
