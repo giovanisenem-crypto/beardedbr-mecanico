@@ -22,9 +22,11 @@
   const heroSheet = new Image();
   const pressSprite = new Image();
   const sentinelSprite = new Image();
+  const launcherSprite = new Image();
+  const crateSprite = new Image();
   let loaded = 0;
   const ready = () => {
-    if (++loaded === backgrounds.length + 3) setTimeout(() => {
+    if (++loaded === backgrounds.length + 5) setTimeout(() => {
       ui.loading.classList.add('hidden'); ui.intro.classList.remove('hidden'); draw();
     }, 650);
   };
@@ -32,6 +34,8 @@
   heroSheet.onload = ready; heroSheet.src = 'art/mechanic_sheet.webp';
   pressSprite.onload = ready; pressSprite.src = 'art/hydraulic_press.webp';
   sentinelSprite.onload = ready; sentinelSprite.src = 'art/sentinel.webp';
+  launcherSprite.onload = ready; launcherSprite.src = 'art/rivet_launcher.webp';
+  crateSprite.onload = ready; crateSprite.src = 'art/supply_crate.webp';
 
   // Every collider follows a visible steel surface in one of the seven background panels.
   const platforms = [
@@ -60,6 +64,12 @@
     { x: W * 6 + 760, min: W * 6 + 625, max: W * 6 + 905, y: 548, dir: 1, alive: true }
   ];
   enemies.forEach(enemy => { enemy.startX = enemy.x; enemy.startDir = enemy.dir; enemy.hp = 2; enemy.hitFlash = 0; });
+  const crates = [
+    { x: 1240, y: 548, reward: 300 }, { x: W + 1320, y: 548, reward: 400 },
+    { x: W * 2 + 1450, y: 548, reward: 300 }, { x: W * 3 + 280, y: 548, reward: 500 },
+    { x: W * 4 + 1500, y: 548, reward: 400 }, { x: W * 5 + 1370, y: 548, reward: 500 },
+    { x: W * 6 + 1320, y: 548, reward: 600 }
+  ].map(crate => ({ ...crate, w: 125, h: 120, hp: 2, alive: true, hitFlash: 0 }));
   const collectibles = [
     { x: 240, y: 468 }, { x: 835, y: 468 }, { x: 1375, y: 468 },
     { x: W + 630, y: 201 }, { x: W + 1160, y: 201 }, { x: W + 1400, y: 468 },
@@ -82,7 +92,7 @@
   let playing = false, paused = false, last = 0, deaths = 0, defeats = 0, collected = 0, points = 0, won = false, cameraX = 0, checkpointIndex = -1;
   let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
   let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
-  let fpsClock = 0, fpsFrames = 0, shootCooldown = 0;
+  let fpsClock = 0, fpsFrames = 0, shootCooldown = 0, shootPose = 0, muzzleFlash = 0;
 
   function pressState(press) {
     const t = (pressClock + press.phase) % 6.6;
@@ -145,7 +155,8 @@
   function reset(showText = false) {
     const safe = checkpointIndex >= 0 ? checkpoints[checkpointIndex] : spawn;
     player.x = safe.x; player.y = safe.y; player.vx = 0; player.vy = 0;
-    player.grounded = true; player.frame = 0; cameraX = Math.max(0, Math.min(WORLD_W - W, player.x - W * .28));
+    player.grounded = true; player.frame = 0; projectiles.length = 0; shootPose = 0; muzzleFlash = 0;
+    cameraX = Math.max(0, Math.min(WORLD_W - W, player.x - W * .28));
     won = false; updateHud();
     if (showText) flash(checkpointIndex >= 0 ? 'QUEDA — RETORNANDO AO CHECKPOINT' : 'QUEDA — VOLTANDO AO INÍCIO', 950);
   }
@@ -156,6 +167,8 @@
   function platformBelow(prevFoot, nextFoot) {
     if (player.vy < 0) return null;
     const left = player.x - player.w * .3, right = player.x + player.w * .3;
+    const crateTop = crates.find(crate => crate.alive && right > crate.x - crate.w / 2 && left < crate.x + crate.w / 2 && prevFoot <= crate.y - crate.h + 5 && nextFoot >= crate.y - crate.h);
+    if (crateTop) return { x1: crateTop.x - crateTop.w / 2, x2: crateTop.x + crateTop.w / 2, y: crateTop.y - crateTop.h };
     return platforms.find(p => right > p.x1 && left < p.x2 && prevFoot <= p.y + 5 && nextFoot >= p.y);
   }
   function updateParticles(dt) {
@@ -181,17 +194,31 @@
   }
   function fireRivet() {
     projectiles.push({
-      x: player.x + player.facing * 52, y: player.y - player.h * .55,
+      x: player.x + player.facing * 96, y: player.y - 126,
       vx: player.facing * 780, life: 1.65, dir: player.facing
     });
+    shootPose = .24; muzzleFlash = .075;
     player.vx -= player.facing * 22;
     tone(190, .09, 'square', .032); tone(760, .045, 'triangle', .014);
   }
   function updateProjectiles(dt) {
     enemies.forEach(enemy => { enemy.hitFlash = Math.max(0, enemy.hitFlash - dt); });
+    crates.forEach(crate => { crate.hitFlash = Math.max(0, crate.hitFlash - dt); });
     for (let i = projectiles.length - 1; i >= 0; i--) {
       const shot = projectiles[i]; shot.x += shot.vx * dt; shot.life -= dt;
       let hit = false;
+      for (const crate of crates) {
+        if (!crate.alive) continue;
+        if (Math.abs(shot.x - crate.x) < crate.w / 2 + 12 && shot.y > crate.y - crate.h - 14 && shot.y < crate.y) {
+          hit = true; crate.hp--; crate.hitFlash = .16; burstAt(shot.x, shot.y); tone(260, .07, 'square', .028);
+          if (crate.hp <= 0) {
+            crate.alive = false; points += crate.reward; burstAt(crate.x, crate.y - crate.h / 2);
+            tone(92, .25, 'sawtooth', .055); flash(`CAIXA ABERTA · +${crate.reward} PONTOS`, 850); updateHud();
+          }
+          break;
+        }
+      }
+      if (hit) { projectiles.splice(i, 1); continue; }
       for (const enemy of enemies) {
         if (!enemy.alive) continue;
         if (Math.abs(shot.x - enemy.x) < 70 && shot.y > enemy.y - 132 && shot.y < enemy.y - 8) {
@@ -208,6 +235,7 @@
     updateParticles(dt);
     if (!playing || paused || won) return;
     pressClock += dt;
+    shootPose = Math.max(0, shootPose - dt); muzzleFlash = Math.max(0, muzzleFlash - dt);
     shootCooldown = Math.max(0, shootCooldown - dt);
     if (keys.attack && shootCooldown <= 0) { fireRivet(); shootCooldown = .48; }
     updateProjectiles(dt);
@@ -220,7 +248,7 @@
     player.vx = Math.max(-455, Math.min(455, player.vx));
     if (keys.jump && player.grounded) { player.vy = -1120; player.grounded = false; keys.jump = false; }
 
-    const prevFoot = player.y;
+    const prevFoot = player.y, prevX = player.x;
     player.x += player.vx * dt; player.vy += 2100 * dt; player.y += player.vy * dt;
     player.x = Math.max(42, Math.min(WORLD_W - 42, player.x));
     const floor = platformBelow(prevFoot, player.y);
@@ -229,6 +257,8 @@
       const supported = platforms.some(p => player.x + player.w * .27 > p.x1 && player.x - player.w * .27 < p.x2 && Math.abs(player.y - p.y) < 8);
       if (!supported) player.grounded = false;
     }
+    const blockingCrate = crates.find(crate => crate.alive && player.y > crate.y - crate.h + 12 && player.y - player.h * .78 < crate.y && player.x + player.w * .28 > crate.x - crate.w / 2 && player.x - player.w * .28 < crate.x + crate.w / 2);
+    if (blockingCrate) { player.x = prevX; player.vx = 0; }
 
     collectibles.forEach(item => {
       if (item.picked) return;
@@ -287,7 +317,7 @@
       ui.score.textContent = `PONTOS ${String(points).padStart(4, '0')}`;
       setTimeout(() => {
         ui.controls.classList.add('hidden');
-        ui.resultStats.textContent = `PONTOS  ${points}\nENGRENAGENS  ${collected}/${collectibles.length}\nSUCATA  ${defeats}/${enemies.length}\nQUEDAS  ${deaths}`;
+        ui.resultStats.textContent = `PONTOS  ${points}\nENGRENAGENS  ${collected}/${collectibles.length}\nSUCATA  ${defeats}/${enemies.length}\nCAIXAS  ${crates.filter(crate => !crate.alive).length}/${crates.length}\nQUEDAS  ${deaths}`;
         ui.result.classList.remove('hidden');
       }, 900);
     }
@@ -306,6 +336,19 @@
     ctx.save(); ctx.translate(player.x - cameraX, player.y);
     if (player.facing < 0) ctx.scale(-1, 1);
     ctx.drawImage(heroSheet, sx, sy, sw, sh, -dw / 2, -dh, dw, dh); ctx.restore();
+  }
+  function drawWeapon() {
+    if (!launcherSprite.complete || (!keys.attack && shootPose <= 0)) return;
+    const kick = muzzleFlash > 0 ? -7 * (muzzleFlash / .075) : 0;
+    ctx.save(); ctx.translate(player.x - cameraX, player.y); if (player.facing < 0) ctx.scale(-1, 1);
+    ctx.drawImage(launcherSprite, -62 + kick, -168, 158, 87);
+    if (muzzleFlash > 0) {
+      const strength = muzzleFlash / .075; ctx.globalCompositeOperation = 'lighter';
+      const flare = ctx.createRadialGradient(98 + kick, -126, 2, 98 + kick, -126, 34);
+      flare.addColorStop(0, `rgba(255,255,230,${strength})`); flare.addColorStop(.28, `rgba(105,220,255,${strength})`); flare.addColorStop(1, 'rgba(20,120,255,0)');
+      ctx.fillStyle = flare; ctx.fillRect(62 + kick, -162, 72, 72);
+    }
+    ctx.restore();
   }
   function drawAtmosphere() {
     ctx.save();
@@ -357,6 +400,20 @@
       ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#16191b'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#ffe39b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    });
+  }
+  function drawCrates() {
+    if (!crateSprite.complete) return;
+    crates.forEach(crate => {
+      if (!crate.alive) return;
+      const x = crate.x - cameraX; if (x < -100 || x > W + 100) return;
+      ctx.save();
+      ctx.drawImage(crateSprite, x - crate.w / 2, crate.y - crate.h, crate.w, crate.h);
+      if (crate.hitFlash > 0) {
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, crate.hitFlash * 5);
+        ctx.drawImage(crateSprite, x - crate.w / 2, crate.y - crate.h, crate.w, crate.h);
+      }
+      ctx.restore();
     });
   }
   function drawEnemies() {
@@ -425,10 +482,11 @@
       if (image.complete && x < W && x > -W) ctx.drawImage(image, x, 0, W, H);
     });
     drawAtmosphere();
+    drawCrates();
     drawObjectives();
     drawProjectiles();
     drawEnemies();
-    if (heroSheet.complete) drawHero();
+    if (heroSheet.complete) { drawHero(); drawWeapon(); }
     drawPresses();
     const vignette = ctx.createRadialGradient(W / 2, H / 2, 180, W / 2, H / 2, 1050);
     vignette.addColorStop(0, 'rgba(0,0,0,0)'); vignette.addColorStop(1, 'rgba(0,0,0,.25)');
@@ -452,9 +510,10 @@
   function startNewRun() {
     deaths = 0; defeats = 0; collected = 0; points = 0; checkpointIndex = -1; pressClock = 0;
     enemies.forEach(enemy => { enemy.x = enemy.startX; enemy.dir = enemy.startDir; enemy.alive = true; enemy.hp = 2; enemy.hitFlash = 0; });
+    crates.forEach(crate => { crate.alive = true; crate.hp = 2; crate.hitFlash = 0; });
     collectibles.forEach(item => { item.picked = false; });
     presses.forEach(press => { press.wasDown = false; });
-    projectiles.length = 0; shootCooldown = 0; keys.attack = false;
+    projectiles.length = 0; shootCooldown = 0; shootPose = 0; muzzleFlash = 0; keys.attack = false;
     ui.result.classList.add('hidden'); ui.controls.classList.remove('hidden');
     paused = false; playing = true; reset(); setAudioLevel();
     flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
