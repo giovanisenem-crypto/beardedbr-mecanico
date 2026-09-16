@@ -259,6 +259,30 @@ header #sound:not(.sound-on) {
   50% { filter: brightness(1.22); }
 }
 
+.effect-toast {
+  position: fixed;
+  z-index: 120;
+  left: 50%;
+  top: 17%;
+  width: min(84vw, 430px);
+  padding: 11px 15px;
+  border: 2px solid var(--deck-color, #00eaff);
+  border-radius: 5px;
+  background: linear-gradient(100deg, #071417f2, #153238f2);
+  box-shadow: 0 0 22px #00eaff66, 0 8px 20px #000c;
+  color: #fff1c9;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .4px;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -18px) scale(.92);
+}
+.effect-toast.enemy-effect { border-color: var(--enemy-color, #ff304f); box-shadow: 0 0 22px #ff304f66, 0 8px 20px #000c; }
+.effect-toast.show { animation: effectToast 1.5s ease both; }
+@keyframes effectToast { 12%,72% { opacity:1; transform:translate(-50%,0) scale(1); } 100% { opacity:0; transform:translate(-50%,-12px) scale(.96); } }
+
 @media (max-height: 650px) {
   .menu-screen { justify-content: flex-start; overflow-y: auto; }
   .faction-card { height: 132px; }

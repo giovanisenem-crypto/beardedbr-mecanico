@@ -35,14 +35,28 @@ public class MainActivity extends Activity {
   while(next==lastTrack&&tracks.length>1)next=(int)(Math.random()*tracks.length);
   lastTrack=next;
   music=MediaPlayer.create(this,tracks[next]);
-  if(music!=null){music.setLooping(true);music.setVolume(.58f,.58f);if(soundEnabled)music.start();}
+  if(music!=null){music.setLooping(true);music.setVolume(.34f,.34f);if(soundEnabled)music.start();}
  }
  private void releaseMusic(){if(music!=null){try{music.stop();}catch(Exception ignored){}music.release();music=null;}}
+ private void playSfx(int resource){
+  if(!soundEnabled)return;
+  MediaPlayer fx=MediaPlayer.create(this,resource);
+  if(fx!=null){fx.setVolume(.82f,.82f);fx.setOnCompletionListener(player->{player.release();});fx.start();}
+ }
  public class AudioBridge {
   @JavascriptInterface public void playRandom(){runOnUiThread(()->playRandomNative());}
   @JavascriptInterface public boolean toggle(){soundEnabled=!soundEnabled;runOnUiThread(()->{if(soundEnabled){if(music==null)playRandomNative();else music.start();}else if(music!=null)music.pause();});return soundEnabled;}
   @JavascriptInterface public void stop(){runOnUiThread(()->releaseMusic());}
   @JavascriptInterface public boolean isOn(){return soundEnabled;}
+  @JavascriptInterface public void sfx(String kind){
+   final int resource;
+   if("card".equals(kind))resource=R.raw.sfx_card;
+   else if("hit".equals(kind))resource=R.raw.sfx_hit;
+   else if("win".equals(kind))resource=R.raw.sfx_win;
+   else if("lose".equals(kind))resource=R.raw.sfx_lose;
+   else resource=R.raw.sfx_bonus;
+   runOnUiThread(()->playSfx(resource));
+  }
  }
  private void immersive(){getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);}
  @Override public void onBackPressed(){game.evaluateJavascript("window.ForjaGame&&window.ForjaGame.back()",null);}
