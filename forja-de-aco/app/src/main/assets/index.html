@@ -1,1 +1,31 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Forja de Aço</title><link rel="stylesheet" href="style.css"></head><body><main id="app"><section id="menu" class="screen"><div class="icon">▣<i>⚙</i></div><h1>FORJA <b>DE AÇO</b></h1><p class="sub">CONFLITO INDUSTRIAL</p><div class="intro"><strong>ESCOLHA SUA FACÇÃO</strong><span>Seu baralho define a estratégia do turno.</span></div><div class="deck-select"><button data-deck="rio">⚙ METAL RIO<br><small>CNC E PRECISÃO</small></button><button data-deck="vulcao">♨ FÁBRICA VULCÃO<br><small>FORÇA E FUNDIDOS</small></button><button data-deck="turbo">▰ LOGÍSTICA TURBO<br><small>VELOCIDADE E COMBOS</small></button><button data-deck="elite">✚ MANUTENÇÃO ELITE<br><small>REPAROS E CONTROLE</small></button></div><button id="play">INICIAR PARTIDA</button><small id="chosen">METAL RIO SELECIONADO • OFFLINE CONTRA I.A.</small></section><section id="game" class="screen hidden"><header><b id="factionTitle">METAL RIO</b><span>RODADA <i id="round">1</i> / 3</span></header><div class="factory enemy"><div class="avatar">⚙</div><div><b id="enemyName">FÁBRICA VULCÃO</b><small>PRODUÇÃO RIVAL: <strong id="enemyScore">0</strong></small></div></div><div id="enemyRows" class="rows"></div><div class="belt">LINHA DE PRODUÇÃO</div><div id="playerRows" class="rows"></div><div class="factory player"><div class="avatar">⚒</div><div><b id="playerName">METAL RIO</b><small>SUA PRODUÇÃO: <strong id="playerScore">0</strong></small></div></div><button id="pass" class="pass">ENCERRAR RODADA</button><div id="hand" class="hand"></div><p id="tip">Toque numa carta e depois na fileira iluminada.</p></section><section id="result" class="screen hidden"><div class="resultbox"><div class="icon">▣<i>⚙</i></div><h1 id="resultTitle">VITÓRIA!</h1><p id="resultText"></p><button id="again">NOVA PARTIDA</button></div></section></main><script src="game.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#0b1113"><title>Forja de Aço</title><link rel="stylesheet" href="style.css"></head>
+<body><main id="app">
+<section id="menu" class="screen menu-screen">
+  <div class="brand"><span class="brand-mark">⚙</span><div><h1>FORJA <b>DE AÇO</b></h1><p>CONFLITO INDUSTRIAL</p></div></div>
+  <div class="menu-heading"><b>ESCOLHA SUA FACÇÃO</b><span>Cada baralho possui uma estratégia e um líder.</span></div>
+  <div id="deckSelect" class="deck-select">
+    <button class="faction-card selected" data-deck="rio"><span class="faction-bg"></span><span class="faction-flag">MR</span><span class="faction-copy"><b>METAL RIO</b><small>CNC • PRECISÃO</small><em>Mestre da Regulagem</em></span></button>
+    <button class="faction-card" data-deck="vulcao"><span class="faction-bg"></span><span class="faction-flag">FV</span><span class="faction-copy"><b>FÁBRICA VULCÃO</b><small>FORÇA • FUNDIDOS</small><em>Mestre Fundidor</em></span></button>
+    <button class="faction-card" data-deck="turbo"><span class="faction-bg"></span><span class="faction-flag">LT</span><span class="faction-copy"><b>LOGÍSTICA TURBO</b><small>VELOCIDADE • COMBOS</small><em>Piloto Turbo</em></span></button>
+    <button class="faction-card" data-deck="elite"><span class="faction-bg"></span><span class="faction-flag">ME</span><span class="faction-copy"><b>MANUTENÇÃO ELITE</b><small>REPAROS • CONTROLE</small><em>Técnica Elite</em></span></button>
+  </div>
+  <div id="deckDetail" class="deck-detail"><span class="leader-icon">⚙</span><div><b>METAL RIO</b><small>+2 para uma máquina CNC por rodada.</small></div></div>
+  <button id="play" class="primary">INICIAR PARTIDA <span>›</span></button>
+  <small class="offline">OFFLINE CONTRA I.A. • BARALHO DE TESTE</small>
+</section>
+
+<section id="game" class="screen game-screen hidden">
+  <div class="game-bg"></div><header><button id="back" aria-label="Voltar">‹</button><b id="factionTitle">METAL RIO</b><span>RODADA <i id="round">1</i>/3</span></header>
+  <div class="score-panel enemy"><span class="crest" id="enemyCrest">FV</span><div><b id="enemyName">FÁBRICA VULCÃO</b><small>PRODUÇÃO RIVAL</small></div><strong id="enemyScore">0</strong></div>
+  <div id="enemyRows" class="rows enemy-rows"></div>
+  <div class="belt"><i></i><span>LINHA DE PRODUÇÃO</span><i></i></div>
+  <div id="playerRows" class="rows player-rows"></div>
+  <div class="score-panel player"><span class="crest" id="playerCrest">MR</span><div><b id="playerName">METAL RIO</b><small>SUA PRODUÇÃO</small></div><strong id="playerScore">0</strong></div>
+  <div id="cardInfo" class="card-info"><b>ESCOLHA UMA CARTA</b><span>Toque na carta para ver a habilidade.</span></div>
+  <div class="action-row"><span id="tip">Escolha uma carta.</span><button id="pass">ENCERRAR RODADA</button></div>
+  <div id="hand" class="hand"></div>
+</section>
+
+<section id="result" class="screen result-screen hidden"><div class="resultbox"><span class="result-gear">⚙</span><small>FIM DO CONTRATO</small><h2 id="resultTitle">VITÓRIA!</h2><p id="resultText"></p><button id="again" class="primary">NOVA PARTIDA</button></div></section>
+</main><script src="game.js"></script></body></html>
