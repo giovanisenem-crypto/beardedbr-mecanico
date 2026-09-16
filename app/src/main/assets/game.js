@@ -74,16 +74,16 @@
   let fpsClock = 0, fpsFrames = 0;
 
   function pressState(press) {
-    const t = (pressClock + press.phase) % 6;
+    const t = (pressClock + press.phase) % 6.6;
     const restY = 135, impactY = 398;
     let footY = restY;
-    if (t >= 4.4 && t < 4.7) {
-      const k = (t - 4.4) / .3; footY = restY + (impactY - restY) * k * k * k;
-    } else if (t >= 4.7 && t < 5.05) footY = impactY;
-    else if (t >= 5.05) {
-      const k = Math.min(1, (t - 5.05) / .95); footY = impactY - (impactY - restY) * k;
+    if (t >= 5 && t < 5.3) {
+      const k = (t - 5) / .3; footY = restY + (impactY - restY) * k * k * k;
+    } else if (t >= 5.3 && t < 5.6) footY = impactY;
+    else if (t >= 5.6) {
+      const k = Math.min(1, (t - 5.6) / 1); footY = impactY - (impactY - restY) * k;
     }
-    return { footY, bottom: footY + 150, warning: t >= 3.2 && t < 4.4, down: t >= 4.7 && t < 5.05 };
+    return { footY, bottom: footY + 150, warning: t >= 3.6 && t < 5, down: t >= 5.3 && t < 5.6 };
   }
   function initSiren() {
     if (audioContext) return;
@@ -215,9 +215,11 @@
       if (state.warning && Math.abs(player.x - press.x) < W * .72) warningAudible = true;
       if (state.down && !press.wasDown) shake = 20;
       press.wasDown = state.down;
-      const horizontalHit = Math.abs(player.x - press.x) < 132;
+      // Only the central impact zone is lethal, and only while the foot is fully down.
+      // Brushing the housing or crossing under the retracted piston is safe.
+      const horizontalHit = Math.abs(player.x - press.x) < 106;
       const verticalHit = state.bottom > player.y - player.h * .85 && state.bottom < player.y + 35;
-      if (horizontalHit && verticalHit) crushed = true;
+      if (state.down && horizontalHit && verticalHit) crushed = true;
     });
     updateSiren(warningAudible);
     if (crushed) {

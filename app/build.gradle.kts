@@ -6,7 +6,7 @@ android {
         applicationId = "br.com.beardedbr.forjaplataforma"
         minSdk = 23
         targetSdk = 35
-        versionCode = 9
-        versionName = "4.1"
+        versionCode = 10
+        versionName = "4.2"
     }
 }
