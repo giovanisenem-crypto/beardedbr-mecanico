@@ -4,7 +4,7 @@ var C=window.EmpilhaCore,clamp=C.clamp,len=C.length;
 var $=function(id){return document.getElementById(id);};
 var canvas=$("world"),ctx=canvas.getContext("2d"),W=900,H=500,DPR=1,zoom=1;
 var WORLD={w:1280,h:840},SAVE_KEY="empilha_turbo_save_v1";
-var saved;try{saved=C.cleanSave(JSON.parse(localStorage.getItem(SAVE_KEY)||"null"));}catch(e){saved=C.cleanSave(null);}
+var saved;try{saved=C.cleanSave(JSON.parse(localStorage.getItem(SAVE_KEY)||"null"));}catch(e){saved=C.cleanSave(null);}var drivers=window.EmpilhaDrivers||[],driver=drivers[0];
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(saved));}catch(e){}}
 var shelves=[
  {x:360,y:245,w:225,h:85},{x:695,y:245,w:225,h:85},
@@ -39,6 +39,7 @@ function stopInputs(){keys={};stick.x=stick.y=0;stick.id=null;heldTurbo=false;$(
 function showToast(text,duration){$("toast").textContent=text;$("toast").classList.add("show");toastTimer=duration||2;}
 function overlays(which){["menu","paused","result","workshop"].forEach(function(id){$(id).hidden=id!==which;});}
 function menuInfo(){
+ var pick=$("driver-pick");if(!pick){pick=document.createElement("div");pick.id="driver-pick";document.querySelector("#menu .menu-card").insertBefore(pick,$("start"));}pick.innerHTML=drivers.map(function(d){return '<button class="driver-card '+(driver&&driver.id===d.id?"chosen":"")+'" data-driver="'+d.id+'"><b>'+d.name+'</b><small>'+d.role+' · '+d.skill+'</small></button>';}).join("");Array.prototype.forEach.call(pick.querySelectorAll("button"),function(b){b.onclick=function(){driver=drivers.filter(function(d){return d.id===b.dataset.driver;})[0];menuInfo();};});
  $("credits-menu").textContent=saved.credits+" CR";
  $("best").textContent=saved.best?"RECORDE: "+saved.best+" PTS"+(saved.bestTime?" · "+formatTime(saved.bestTime):""):"Seu primeiro turno começa aqui.";
  $("sound").textContent=saved.sound?"SOM LIGADO":"SOM DESLIGADO";$("sound").setAttribute("aria-pressed",String(saved.sound));
@@ -48,7 +49,7 @@ function start(){
  initAudio();stopInputs();state.phase="playing";state.time=150;state.deliveries=0;state.integritySum=0;state.elapsed=0;state.score=0;state.cargo=null;state.energy=1;state.damageCooldown=0;state.shake=0;
  player.x=165;player.y=690;player.vx=player.vy=0;player.angle=0;cam.x=player.x;cam.y=player.y;particles=[];tireMarks=[];
  overlays(null);$("hud").hidden=false;$("controls").hidden=false;$("objective").hidden=false;uiTimer=1;
- showToast("Busque o pallet amarelo. Pare perto e toque em PEGAR.",3.4);updateUI();
+ showToast((driver?driver.name+" — "+driver.skill+". ":"")+"Busque o pallet amarelo. Pare perto e toque em PEGAR.",3.4);updateUI();
 }
 function pause(){
  if(state.phase!=="playing")return;state.phase="paused";stopInputs();overlays("paused");$("controls").hidden=true;
@@ -89,7 +90,7 @@ function impact(speed){
  if(state.damageCooldown>0||speed<45)return;
  state.damageCooldown=1.0;state.shake=Math.min(5,speed/65);tone(85,.13,"sawtooth",.035);burst(player.x,player.y,"#f5c877",7);
  if(state.cargo){
-  var damage=clamp(speed*.065,4,24)*(1-saved.upgrades.forks*.18);
+  var damage=clamp(speed*.065,4,24)*(1-saved.upgrades.forks*.18)*(driver&&driver.id==="vitorino"?0.65:1);
   state.cargo.integrity=Math.max(0,state.cargo.integrity-damage);
   if(state.cargo.integrity<=0){state.cargo=null;showToast("Carga danificada! Pegue outro pallet no ponto de coleta.",3);}
   else showToast("CUIDADO COM A CARGA! "+Math.ceil(state.cargo.integrity)+"% de integridade",1.1);
@@ -115,7 +116,7 @@ function update(dt){
  var n=len(ix,iy);if(n>1){ix/=n;iy/=n;n=1;}
  var turbo=(heldTurbo||keys.shift)&&n>.1&&state.energy>.02;
  state.energy=clamp(state.energy+(turbo?-.34:.18)*dt,0,1);
- var maximum=(235+saved.upgrades.engine*22)*(state.cargo ? .88 : 1)*(turbo?1.48:1);
+ var maximum=(235+saved.upgrades.engine*22)*(driver?driver.speed:1)*(state.cargo ? .88 : 1)*(turbo?(driver&&driver.id==="andre"?1.62:1.48):1);
  var grip=(n>.1?5.6+saved.upgrades.tires*.8:8.5+saved.upgrades.tires)*dt,blend=1-Math.exp(-grip);
  player.vx+=(ix*maximum-player.vx)*blend;player.vy+=(iy*maximum-player.vy)*blend;
  if(n>.15){var target=Math.atan2(iy,ix);player.angle+=C.normalAngle(target-player.angle)*Math.min(1,dt*(9+saved.upgrades.tires));}
