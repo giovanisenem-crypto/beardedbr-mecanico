@@ -8,7 +8,7 @@
   const ui = {
     loading: document.querySelector('#loading'), intro: document.querySelector('#intro'),
     hud: document.querySelector('#hud'), controls: document.querySelector('#controls'),
-    status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), score: document.querySelector('#score'), fps: document.querySelector('#fps'),
+    status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), score: document.querySelector('#score'), power: document.querySelector('#power'), fps: document.querySelector('#fps'),
     sound: document.querySelector('#sound'), message: document.querySelector('#message'),
     messageText: document.querySelector('#message div'), result: document.querySelector('#result'),
     resultStats: document.querySelector('#result-stats')
@@ -65,10 +65,10 @@
   ];
   enemies.forEach(enemy => { enemy.startX = enemy.x; enemy.startDir = enemy.dir; enemy.hp = 2; enemy.hitFlash = 0; });
   const crates = [
-    { x: 1240, y: 548, reward: 300 }, { x: W + 1320, y: 548, reward: 400 },
-    { x: W * 2 + 1450, y: 548, reward: 300 }, { x: W * 3 + 280, y: 548, reward: 500 },
-    { x: W * 4 + 1500, y: 548, reward: 400 }, { x: W * 5 + 1370, y: 548, reward: 500 },
-    { x: W * 6 + 1320, y: 548, reward: 600 }
+    { x: 1240, y: 548, kind: 'points', reward: 300 }, { x: W + 1320, y: 548, kind: 'magnet' },
+    { x: W * 2 + 1450, y: 548, kind: 'points', reward: 400 }, { x: W * 3 + 280, y: 548, kind: 'spread' },
+    { x: W * 4 + 1500, y: 548, kind: 'magnet' }, { x: W * 5 + 1370, y: 548, kind: 'spread' },
+    { x: W * 6 + 1320, y: 548, kind: 'points', reward: 600 }
   ].map(crate => ({ ...crate, w: 125, h: 120, hp: 2, alive: true, hitFlash: 0 }));
   const collectibles = [
     { x: 240, y: 468 }, { x: 835, y: 468 }, { x: 1375, y: 468 },
@@ -78,7 +78,7 @@
     { x: W * 4 + 700, y: 255 }, { x: W * 4 + 1200, y: 214 }, { x: W * 4 + 1480, y: 468 },
     { x: W * 5 + 1320, y: 243 },
     { x: W * 6 + 730, y: 468 }, { x: W * 6 + 960, y: 243 }, { x: W * 6 + 1210, y: 468 }
-  ].map(item => ({ ...item, picked: false }));
+  ].map(item => ({ ...item, startX: item.x, startY: item.y, picked: false }));
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
   const keys = { left: false, right: false, jump: false, attack: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
@@ -88,11 +88,11 @@
   const smoke = Array.from({ length: 22 }, (_, i) => ({
     x: (i * 617 + 300) % WORLD_W, y: 510 - (i % 4) * 48, phase: i * .7, size: 65 + (i % 4) * 24
   }));
-  const bursts = [], projectiles = [];
+  const bursts = [], projectiles = [], powerups = [];
   let playing = false, paused = false, last = 0, deaths = 0, defeats = 0, collected = 0, points = 0, won = false, cameraX = 0, checkpointIndex = -1;
   let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
   let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
-  let fpsClock = 0, fpsFrames = 0, shootCooldown = 0, shootPose = 0, muzzleFlash = 0;
+  let fpsClock = 0, fpsFrames = 0, shootCooldown = 0, shootPose = 0, muzzleFlash = 0, magnetTimer = 0, spreadTimer = 0;
 
   function pressState(press) {
     const t = (pressClock + press.phase) % 6.6;
@@ -151,6 +151,10 @@
     ui.status.textContent = `SETOR 0${sector()} · ${names[sector() - 1]} · QUEDAS ${deaths}`;
     ui.scrap.textContent = `SUCATA ${defeats}/${enemies.length}`;
     ui.score.textContent = `PONTOS ${String(points).padStart(4, '0')}`;
+    const active = [];
+    if (magnetTimer > 0) active.push(`ÍMÃ ${Math.ceil(magnetTimer)}s`);
+    if (spreadTimer > 0) active.push(`TRIPLO ${Math.ceil(spreadTimer)}s`);
+    ui.power.textContent = active.join(' · '); ui.power.classList.toggle('hidden', active.length === 0);
   }
   function reset(showText = false) {
     const safe = checkpointIndex >= 0 ? checkpoints[checkpointIndex] : spawn;
@@ -193,10 +197,11 @@
     tone(105, .22, 'sawtooth', .05); flash(message, 700); updateHud();
   }
   function fireRivet() {
-    projectiles.push({
-      x: player.x + player.facing * 96, y: player.y - 126,
-      vx: player.facing * 780, life: 1.65, dir: player.facing
-    });
+    const angles = spreadTimer > 0 ? [-115, 0, 115] : [0];
+    angles.forEach(vy => projectiles.push({
+      x: player.x + player.facing * 74, y: player.y - 126,
+      vx: player.facing * 780, vy, life: 1.65, dir: player.facing
+    }));
     shootPose = .24; muzzleFlash = .075;
     player.vx -= player.facing * 22;
     tone(190, .09, 'square', .032); tone(760, .045, 'triangle', .014);
@@ -205,15 +210,16 @@
     enemies.forEach(enemy => { enemy.hitFlash = Math.max(0, enemy.hitFlash - dt); });
     crates.forEach(crate => { crate.hitFlash = Math.max(0, crate.hitFlash - dt); });
     for (let i = projectiles.length - 1; i >= 0; i--) {
-      const shot = projectiles[i]; shot.x += shot.vx * dt; shot.life -= dt;
+      const shot = projectiles[i]; shot.x += shot.vx * dt; shot.y += shot.vy * dt; shot.life -= dt;
       let hit = false;
       for (const crate of crates) {
         if (!crate.alive) continue;
         if (Math.abs(shot.x - crate.x) < crate.w / 2 + 12 && shot.y > crate.y - crate.h - 14 && shot.y < crate.y) {
           hit = true; crate.hp--; crate.hitFlash = .16; burstAt(shot.x, shot.y); tone(260, .07, 'square', .028);
           if (crate.hp <= 0) {
-            crate.alive = false; points += crate.reward; burstAt(crate.x, crate.y - crate.h / 2);
-            tone(92, .25, 'sawtooth', .055); flash(`CAIXA ABERTA · +${crate.reward} PONTOS`, 850); updateHud();
+            crate.alive = false; points += 100; burstAt(crate.x, crate.y - crate.h / 2);
+            powerups.push({ x: crate.x, y: crate.y - crate.h - 38, type: crate.kind, reward: crate.reward || 0, phase: Math.random() * 6 });
+            tone(92, .25, 'sawtooth', .055); flash('CAIXA ABERTA · BÔNUS LIBERADO', 850); updateHud();
           }
           break;
         }
@@ -236,6 +242,7 @@
     if (!playing || paused || won) return;
     pressClock += dt;
     shootPose = Math.max(0, shootPose - dt); muzzleFlash = Math.max(0, muzzleFlash - dt);
+    magnetTimer = Math.max(0, magnetTimer - dt); spreadTimer = Math.max(0, spreadTimer - dt);
     shootCooldown = Math.max(0, shootCooldown - dt);
     if (keys.attack && shootCooldown <= 0) { fireRivet(); shootCooldown = .48; }
     updateProjectiles(dt);
@@ -259,6 +266,25 @@
     }
     const blockingCrate = crates.find(crate => crate.alive && player.y > crate.y - crate.h + 12 && player.y - player.h * .78 < crate.y && player.x + player.w * .28 > crate.x - crate.w / 2 && player.x - player.w * .28 < crate.x + crate.w / 2);
     if (blockingCrate) { player.x = prevX; player.vx = 0; }
+
+    for (let i = powerups.length - 1; i >= 0; i--) {
+      const bonus = powerups[i];
+      if (Math.abs(player.x - bonus.x) < 68 && bonus.y > player.y - player.h * .9 - 20 && bonus.y < player.y + 25) {
+        if (bonus.type === 'magnet') { magnetTimer = 12; flash('ÍMÃ COLETOR ATIVO · 12 SEGUNDOS', 1000); }
+        else if (bonus.type === 'spread') { spreadTimer = 10; flash('DISPARO TRIPLO ATIVO · 10 SEGUNDOS', 1000); }
+        else { points += bonus.reward; flash(`BÔNUS DE PONTOS · +${bonus.reward}`, 900); }
+        points += 150; burstAt(bonus.x, bonus.y); tone(960, .18, 'triangle', .05); powerups.splice(i, 1); updateHud();
+      }
+    }
+
+    if (magnetTimer > 0) collectibles.forEach(item => {
+      if (item.picked) return;
+      const dx = player.x - item.x, dy = player.y - player.h * .45 - item.y, distance = Math.hypot(dx, dy);
+      if (distance < 360 && distance > 8) {
+        const speed = Math.min(720, 260 + (360 - distance) * 1.6);
+        item.x += dx / distance * speed * dt; item.y += dy / distance * speed * dt;
+      }
+    });
 
     collectibles.forEach(item => {
       if (item.picked) return;
@@ -339,14 +365,14 @@
   }
   function drawWeapon() {
     if (!launcherSprite.complete || (!keys.attack && shootPose <= 0)) return;
-    const kick = muzzleFlash > 0 ? -7 * (muzzleFlash / .075) : 0;
+    const kick = muzzleFlash > 0 ? -5 * (muzzleFlash / .075) : 0;
     ctx.save(); ctx.translate(player.x - cameraX, player.y); if (player.facing < 0) ctx.scale(-1, 1);
-    ctx.drawImage(launcherSprite, -62 + kick, -168, 158, 87);
+    ctx.drawImage(launcherSprite, -38 + kick, -157, 112, 62);
     if (muzzleFlash > 0) {
       const strength = muzzleFlash / .075; ctx.globalCompositeOperation = 'lighter';
-      const flare = ctx.createRadialGradient(98 + kick, -126, 2, 98 + kick, -126, 34);
+      const flare = ctx.createRadialGradient(75 + kick, -126, 2, 75 + kick, -126, 25);
       flare.addColorStop(0, `rgba(255,255,230,${strength})`); flare.addColorStop(.28, `rgba(105,220,255,${strength})`); flare.addColorStop(1, 'rgba(20,120,255,0)');
-      ctx.fillStyle = flare; ctx.fillRect(62 + kick, -162, 72, 72);
+      ctx.fillStyle = flare; ctx.fillRect(49 + kick, -152, 52, 52);
     }
     ctx.restore();
   }
@@ -400,6 +426,20 @@
       ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#16191b'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#ffe39b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    });
+    powerups.forEach((bonus, i) => {
+      const x = bonus.x - cameraX; if (x < -70 || x > W + 70) return;
+      const y = bonus.y + Math.sin(now * .005 + bonus.phase) * 8;
+      const color = bonus.type === 'magnet' ? '#5ce4ff' : bonus.type === 'spread' ? '#ff9d35' : '#ffe06a';
+      ctx.save(); ctx.translate(x, y); ctx.rotate(now * .0015 + i);
+      ctx.globalCompositeOperation = 'lighter';
+      const glow = ctx.createRadialGradient(0, 0, 5, 0, 0, 38);
+      glow.addColorStop(0, '#ffffff'); glow.addColorStop(.22, color); glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0, 0, 38, 0, Math.PI * 2); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#20262a'; ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.stroke(); ctx.rotate(-(now * .0015 + i));
+      ctx.fillStyle = '#fff'; ctx.font = '950 18px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(bonus.type === 'magnet' ? 'M' : bonus.type === 'spread' ? '×3' : '+', 0, 1); ctx.restore();
     });
   }
   function drawCrates() {
@@ -511,9 +551,10 @@
     deaths = 0; defeats = 0; collected = 0; points = 0; checkpointIndex = -1; pressClock = 0;
     enemies.forEach(enemy => { enemy.x = enemy.startX; enemy.dir = enemy.startDir; enemy.alive = true; enemy.hp = 2; enemy.hitFlash = 0; });
     crates.forEach(crate => { crate.alive = true; crate.hp = 2; crate.hitFlash = 0; });
-    collectibles.forEach(item => { item.picked = false; });
+    collectibles.forEach(item => { item.x = item.startX; item.y = item.startY; item.picked = false; });
     presses.forEach(press => { press.wasDown = false; });
-    projectiles.length = 0; shootCooldown = 0; shootPose = 0; muzzleFlash = 0; keys.attack = false;
+    projectiles.length = 0; powerups.length = 0; shootCooldown = 0; shootPose = 0; muzzleFlash = 0;
+    magnetTimer = 0; spreadTimer = 0; keys.attack = false; ui.power.classList.add('hidden');
     ui.result.classList.add('hidden'); ui.controls.classList.remove('hidden');
     paused = false; playing = true; reset(); setAudioLevel();
     flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
