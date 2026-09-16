@@ -73,7 +73,7 @@
     { x: W * 4 + 1500, y: 548, kind: 'magnet' }, { x: W * 5 + 1370, y: 548, kind: 'spread' },
     { x: W * 6 + 330, y: 548, kind: 'points', reward: 600 }
   ].map(crate => ({ ...crate, w: 125, h: 120, hp: 2, alive: true, hitFlash: 0 }));
-  const boss = { x: W * 6 + 1430, y: 548, min: W * 6 + 1330, max: WORLD_W - 165, dir: -1, hp: 10, maxHp: 10, alive: true, active: false, introduced: false, hitFlash: 0, shotClock: 1.25 };
+  const boss = { x: W * 6 + 1430, y: 548, min: W * 6 + 1330, max: WORLD_W - 165, dir: -1, hp: 10, maxHp: 10, alive: true, active: false, introduced: false, hitFlash: 0, shotClock: 1.25, deathClock: 0, explosionClock: 0 };
   const collectibles = [
     { x: 240, y: 468 }, { x: 835, y: 468 }, { x: 1375, y: 468 },
     { x: W + 630, y: 201 }, { x: W + 1160, y: 201 }, { x: W + 1400, y: 468 },
@@ -97,6 +97,7 @@
   let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
   let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
   let fpsClock = 0, fpsFrames = 0, shootCooldown = 0, shootPose = 0, muzzleFlash = 0, magnetTimer = 0, spreadTimer = 0;
+  let gateProgress = 0, celebrating = false, victoryClock = 0, victoryToneStep = 0;
 
   function pressState(press) {
     const t = (pressClock + press.phase) % 6.6;
@@ -204,10 +205,10 @@
   }
   function destroyBoss() {
     if (!boss.alive) return;
-    boss.alive = false; boss.active = false; points += 2000; shake = 28;
+    boss.alive = false; boss.active = false; boss.deathClock = 1.55; boss.explosionClock = 0; points += 2000; shake = 28;
     for (let n = 0; n < 5; n++) burstAt(boss.x + (Math.random() - .5) * 170, boss.y - 35 - Math.random() * 170);
     tone(72, .55, 'sawtooth', .075); tone(220, .7, 'square', .035);
-    flash('GUARDIÃO DERROTADO — PORTÃO LIBERADO', 1700); updateHud();
+    flash('NÚCLEO DESTRUÍDO!', 1200); updateHud();
   }
   function fireRivet() {
     const angles = spreadTimer > 0 ? [-115, 0, 115] : [0];
@@ -282,9 +283,48 @@
     const pLeft = player.x - player.w * .3, pRight = player.x + player.w * .3, pTop = player.y - player.h * .86;
     return pRight > boss.x - 116 && pLeft < boss.x + 116 && player.y > boss.y - 218 && pTop < boss.y - 8;
   }
+  function updateAftermath(dt) {
+    if (boss.deathClock > 0) {
+      boss.deathClock = Math.max(0, boss.deathClock - dt); boss.explosionClock -= dt;
+      if (boss.explosionClock <= 0) {
+        boss.explosionClock = .18; shake = Math.max(shake, 12);
+        burstAt(boss.x + (Math.random() - .5) * 190, boss.y - 30 - Math.random() * 185);
+        tone(70 + Math.random() * 55, .18, 'sawtooth', .045);
+      }
+      if (boss.deathClock === 0) { flash('PORTÃO DA FORJA ABRINDO', 1500); tone(165, .45, 'triangle', .045); }
+    } else if (!boss.alive && gateProgress < 1) {
+      gateProgress = Math.min(1, gateProgress + dt / 1.65);
+      if (gateProgress >= 1) { shake = 8; tone(330, .25, 'triangle', .035); flash('PASSAGEM LIBERADA!', 1000); }
+    }
+  }
+  function beginCelebration() {
+    if (celebrating) return;
+    celebrating = true; victoryClock = 0; victoryToneStep = 0; player.vx = 0; shootPose = 0; muzzleFlash = 0; keys.left = false; keys.right = false; keys.attack = false;
+    ui.controls.classList.add('hidden'); flash('FORJA DOMINADA!', 1450);
+  }
+  function finishLevel() {
+    celebrating = false; won = true; player.vx = 0; points += Math.max(0, 1000 - deaths * 100); updateSiren(false); setAudioLevel();
+    ui.status.textContent = `FASE 1 CONCLUÍDA · QUEDAS ${deaths}`;
+    ui.scrap.textContent = `SUCATA ${defeats}/${enemies.length}`;
+    ui.score.textContent = `PONTOS ${String(points).padStart(4, '0')}`;
+    ui.resultStats.textContent = `PONTOS  ${points}\nENGRENAGENS  ${collected}/${collectibles.length}\nSUCATA  ${defeats}/${enemies.length}\nGUARDIÃO  DERROTADO\nCAIXAS  ${crates.filter(crate => !crate.alive).length}/${crates.length}\nQUEDAS  ${deaths}`;
+    ui.result.classList.remove('hidden');
+  }
+  function updateCelebration(dt) {
+    victoryClock += dt; player.frame = 1 + (Math.floor(victoryClock * 7) % 3);
+    const nextTone = [0, .24, .48, .76, 1.05, 1.38];
+    const notes = [330, 440, 523, 660, 784, 1047];
+    if (victoryToneStep < nextTone.length && victoryClock >= nextTone[victoryToneStep]) {
+      tone(notes[victoryToneStep], .28, 'triangle', .055); victoryToneStep++;
+      burstAt(player.x + (Math.random() - .5) * 90, player.y - 130 - Math.random() * 70);
+    }
+    if (victoryClock >= 2.15) finishLevel();
+  }
   function update(dt) {
     updateParticles(dt);
     if (!playing || paused || won) return;
+    updateAftermath(dt);
+    if (celebrating) { updateCelebration(dt); updateHud(); return; }
     pressClock += dt;
     shootPose = Math.max(0, shootPose - dt); muzzleFlash = Math.max(0, muzzleFlash - dt);
     magnetTimer = Math.max(0, magnetTimer - dt); spreadTimer = Math.max(0, spreadTimer - dt);
@@ -384,19 +424,10 @@
     if (crushed) {
       deaths++; updateSiren(false); reset(false); flash('ATINGIDO PELA PRENSA — RETORNANDO AO CHECKPOINT', 1100); return;
     }
-    if (!won && player.x > WORLD_W - 205 && player.grounded && boss.alive) {
-      player.x = WORLD_W - 285; player.vx = 0; flash('PORTÃO BLOQUEADO — DERROTE O GUARDIÃO', 900);
+    if (!won && player.x > WORLD_W - 205 && player.grounded && (boss.alive || gateProgress < .94)) {
+      player.x = WORLD_W - 285; player.vx = 0; flash(boss.alive ? 'PORTÃO BLOQUEADO — DERROTE O GUARDIÃO' : 'AGUARDE — PORTÃO ABRINDO', 700);
     } else if (!won && player.x > WORLD_W - 205 && player.grounded) {
-      won = true; player.vx = 0; points += Math.max(0, 1000 - deaths * 100); updateSiren(false); setAudioLevel();
-      flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 900);
-      ui.status.textContent = `FASE 1 CONCLUÍDA · QUEDAS ${deaths}`;
-      ui.scrap.textContent = `SUCATA ${defeats}/${enemies.length}`;
-      ui.score.textContent = `PONTOS ${String(points).padStart(4, '0')}`;
-      setTimeout(() => {
-        ui.controls.classList.add('hidden');
-        ui.resultStats.textContent = `PONTOS  ${points}\nENGRENAGENS  ${collected}/${collectibles.length}\nSUCATA  ${defeats}/${enemies.length}\nGUARDIÃO  DERROTADO\nCAIXAS  ${crates.filter(crate => !crate.alive).length}/${crates.length}\nQUEDAS  ${deaths}`;
-        ui.result.classList.remove('hidden');
-      }, 900);
+      beginCelebration();
     }
 
     const desiredCamera = Math.max(0, Math.min(WORLD_W - W, player.x - W * .34));
@@ -410,7 +441,8 @@
     const cols = 4, rows = 2, sw = heroSheet.width / cols, sh = heroSheet.height / rows;
     const f = Math.max(0, Math.min(7, player.frame)), sx = (f % cols) * sw, sy = Math.floor(f / cols) * sh;
     const dh = player.h, dw = sw / sh * dh;
-    ctx.save(); ctx.translate(player.x - cameraX, player.y);
+    const victoryBob = celebrating ? Math.abs(Math.sin(victoryClock * 7)) * 18 : 0;
+    ctx.save(); ctx.translate(player.x - cameraX, player.y - victoryBob);
     if (player.facing < 0) ctx.scale(-1, 1);
     ctx.drawImage(heroSheet, sx, sy, sw, sh, -dw / 2, -dh, dw, dh); ctx.restore();
   }
@@ -526,15 +558,30 @@
     });
   }
   function drawBoss() {
-    if (!boss.alive || !bossSprite.complete) return;
+    if ((!boss.alive && boss.deathClock <= 0) || !bossSprite.complete) return;
     const x = boss.x - cameraX; if (x < -280 || x > W + 280) return;
     const w = 270, h = 235;
-    ctx.save(); ctx.translate(x, boss.y);
+    ctx.save(); ctx.translate(x + (boss.deathClock > 0 ? (Math.random() - .5) * 13 : 0), boss.y);
+    if (!boss.alive) ctx.globalAlpha = Math.max(.18, boss.deathClock / 1.55);
     ctx.drawImage(bossSprite, -w / 2, -h, w, h);
     const pulse = .18 + Math.sin(performance.now() * .012) * .05;
     ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,87,8,${pulse})`;
     ctx.beginPath(); ctx.arc(24, -125, 52, 0, Math.PI * 2); ctx.fill();
     if (boss.hitFlash > 0) { ctx.globalAlpha = Math.min(1, boss.hitFlash * 5); ctx.drawImage(bossSprite, -w / 2, -h, w, h); }
+    ctx.restore();
+  }
+  function drawGate() {
+    const x = WORLD_W - 112 - cameraX, lift = gateProgress * 438, top = 110 - lift, width = 168, height = 438;
+    if (x < -220 || x > W + 220 || gateProgress >= .995) return;
+    ctx.save();
+    const steel = ctx.createLinearGradient(x - width / 2, 0, x + width / 2, 0);
+    steel.addColorStop(0, '#15191b'); steel.addColorStop(.18, '#667074'); steel.addColorStop(.5, '#252b2e'); steel.addColorStop(.82, '#747d80'); steel.addColorStop(1, '#111416');
+    ctx.fillStyle = steel; ctx.fillRect(x - width / 2, top, width, height);
+    ctx.strokeStyle = '#0a0c0d'; ctx.lineWidth = 8; ctx.strokeRect(x - width / 2, top, width, height);
+    for (let y = top + 42; y < top + height; y += 58) { ctx.fillStyle = 'rgba(0,0,0,.42)'; ctx.fillRect(x - width / 2 + 7, y, width - 14, 7); }
+    ctx.fillStyle = '#e27b18'; ctx.fillRect(x - width / 2 + 12, top + height - 40, width - 24, 19);
+    ctx.fillStyle = '#16191b';
+    for (let n = 0; n < 6; n++) { ctx.save(); ctx.translate(x - width / 2 + 18 + n * 27, top + height - 31); ctx.rotate(-.65); ctx.fillRect(-5, -17, 10, 34); ctx.restore(); }
     ctx.restore();
   }
   function drawBossShots() {
@@ -601,6 +648,7 @@
     drawEnemies();
     drawBoss();
     drawBossShots();
+    drawGate();
     if (heroSheet.complete) { drawHero(); drawWeapon(); }
     drawPresses();
     const vignette = ctx.createRadialGradient(W / 2, H / 2, 180, W / 2, H / 2, 1050);
@@ -628,9 +676,9 @@
     crates.forEach(crate => { crate.alive = true; crate.hp = 2; crate.hitFlash = 0; });
     collectibles.forEach(item => { item.x = item.startX; item.y = item.startY; item.picked = false; });
     presses.forEach(press => { press.wasDown = false; });
-    boss.x = W * 6 + 1430; boss.dir = -1; boss.hp = boss.maxHp; boss.alive = true; boss.active = false; boss.introduced = false; boss.hitFlash = 0; boss.shotClock = 1.25;
+    boss.x = W * 6 + 1430; boss.dir = -1; boss.hp = boss.maxHp; boss.alive = true; boss.active = false; boss.introduced = false; boss.hitFlash = 0; boss.shotClock = 1.25; boss.deathClock = 0; boss.explosionClock = 0;
     projectiles.length = 0; bossShots.length = 0; powerups.length = 0; shootCooldown = 0; shootPose = 0; muzzleFlash = 0;
-    magnetTimer = 0; spreadTimer = 0; keys.attack = false; ui.power.classList.add('hidden');
+    magnetTimer = 0; spreadTimer = 0; gateProgress = 0; celebrating = false; victoryClock = 0; keys.attack = false; ui.power.classList.add('hidden');
     ui.result.classList.add('hidden'); ui.controls.classList.remove('hidden');
     paused = false; playing = true; reset(); setAudioLevel();
     flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
