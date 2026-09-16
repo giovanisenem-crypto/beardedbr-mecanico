@@ -1,8 +1,8 @@
-name: Gerar APK
+name: Gerar APK Forja Plataforma
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ codex/forja-plataforma-v1 ]
   pull_request:
     branches: [ main ]
 jobs:
@@ -22,9 +22,9 @@ jobs:
       - name: Compilar APK
         run: gradle assembleDebug
       - name: Renomear APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk BeardedBR-Mecanico-v1.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk Forja-de-Aco-Plataforma-v1.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: BeardedBR-Mecanico-APK
-          path: BeardedBR-Mecanico-v1.apk
+          name: Forja-de-Aco-Plataforma-APK
+          path: Forja-de-Aco-Plataforma-v1.apk
           retention-days: 30
