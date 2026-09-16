@@ -45,7 +45,6 @@
   ];
   const spawn = { x: 165, y: 548 };
   const checkpoints = [{ x: W * 2 + 918, y: 548 }, { x: W * 4 + 1118, y: 548 }];
-  const presses = [{ x1: W * 5 + 635, x2: W * 5 + 785, phase: 0 }, { x1: W * 5 + 915, x2: W * 5 + 1065, phase: 1.35 }];
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
   const keys = { left: false, right: false, jump: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
@@ -110,13 +109,6 @@
     if (nextCheckpoint && player.x > nextCheckpoint.x - 70 && player.grounded) {
       checkpointIndex++; flash(`CHECKPOINT ${checkpointIndex + 1} ATIVADO`, 1300); updateHud();
     }
-    const pressHit = presses.some(p => {
-      const cycle = (performance.now() / 1000 + p.phase) % 3;
-      return cycle > 2.28 && player.grounded && player.y > 500 && player.x > p.x1 && player.x < p.x2;
-    });
-    if (pressHit) {
-      deaths++; reset(false); flash('PRENSA ATIVA — RETORNANDO AO CHECKPOINT', 1050); return;
-    }
     if (!won && player.x > WORLD_W - 205 && player.grounded) {
       won = true; player.vx = 0; flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 2600);
       ui.status.textContent = `FASE 1 CONCLUÍDA · QUEDAS ${deaths}`;
@@ -154,19 +146,6 @@
     });
     ctx.restore();
   }
-  function drawPressWarnings() {
-    presses.forEach(p => {
-      const x = p.x1 - cameraX, width = p.x2 - p.x1;
-      if (x > W || x + width < 0) return;
-      const cycle = (performance.now() / 1000 + p.phase) % 3;
-      const danger = cycle > 2.28, pulse = .35 + Math.sin(performance.now() * .012) * .18;
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = danger ? 'rgba(255,45,0,.62)' : `rgba(255,145,25,${pulse})`;
-      ctx.fillRect(x, 535, width, 13);
-      if (danger) { ctx.fillStyle = 'rgba(255,70,0,.13)'; ctx.fillRect(x, 330, width, 218); }
-      ctx.restore();
-    });
-  }
   function draw() {
     ctx.fillStyle = '#050607'; ctx.fillRect(0, 0, W, H);
     backgrounds.forEach((image, i) => {
@@ -174,7 +153,6 @@
       if (image.complete && x < W && x > -W) ctx.drawImage(image, x, 0, W, H);
     });
     drawAtmosphere();
-    drawPressWarnings();
     if (heroSheet.complete) drawHero();
     const vignette = ctx.createRadialGradient(W / 2, H / 2, 180, W / 2, H / 2, 1050);
     vignette.addColorStop(0, 'rgba(0,0,0,0)'); vignette.addColorStop(1, 'rgba(0,0,0,.25)');
