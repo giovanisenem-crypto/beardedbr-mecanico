@@ -3,7 +3,8 @@
     <application
         android:theme="@style/AppTheme"
         android:label="Forja de Aço"
-        android:icon="@drawable/forja_icon"
+        android:icon="@mipmap/forja_aco_v3"
+        android:roundIcon="@mipmap/forja_aco_v3"
         android:allowBackup="true"
         android:supportsRtl="true">
         <activity

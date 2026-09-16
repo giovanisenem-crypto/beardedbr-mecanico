@@ -77,6 +77,60 @@ header #sound:not(.sound-on) {
   border-color: #79613c;
 }
 
+.hand {
+  height: 210px;
+  gap: 9px;
+  padding: 6px 6px 12px;
+}
+
+.hand > .card {
+  flex-basis: 132px;
+  height: 196px;
+  border-radius: 8px;
+  border-width: 3px;
+}
+
+.hand > .card .card-art {
+  height: 120px;
+}
+
+.hand > .card .rarity {
+  top: 110px;
+  font-size: 9px;
+}
+
+.hand > .card .card-copy {
+  height: 73px;
+  padding: 4px 6px;
+}
+
+.hand > .card .card-copy b {
+  font-size: 10px;
+  line-height: 11px;
+}
+
+.hand > .card .card-copy small {
+  font-size: 7px;
+}
+
+.hand > .card .card-copy em {
+  font-size: 8px;
+  line-height: 9px;
+  height: 28px;
+}
+
+.hand > .card .power {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+}
+
+.slots .card {
+  flex-basis: 27px;
+  width: 27px;
+  height: 27px;
+}
+
 @keyframes targetPulse {
   50% { filter: brightness(1.22); }
 }
@@ -84,8 +138,8 @@ header #sound:not(.sound-on) {
 @media (max-height: 650px) {
   .menu-screen { justify-content: flex-start; overflow-y: auto; }
   .faction-card { height: 132px; }
-  .hand { height: 135px; }
-  .card { height: 125px; }
-  .card-art { height: 72px; }
-  .rarity { top: 65px; }
+  .hand { height: 174px; }
+  .hand > .card { height: 162px; flex-basis: 112px; }
+  .hand > .card .card-art { height: 96px; }
+  .hand > .card .rarity { top: 88px; }
 }
