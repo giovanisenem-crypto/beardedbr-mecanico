@@ -221,6 +221,40 @@ header #sound:not(.sound-on) {
 @keyframes cardFlyRight { 0% { transform:translate(-50%,-50%) rotateY(-90deg); opacity:0 } 35%,75% { transform:translate(80%,-42%) rotateY(-25deg) rotateZ(18deg); opacity:1 } 100% { transform:translate(210%,-40%) rotateZ(45deg); opacity:0 } }
 @keyframes sparkOne{to{transform:translate(-150px,-270px) scale(0);opacity:0}}@keyframes sparkTwo{to{transform:translate(170px,-210px) scale(0);opacity:0}}@keyframes sparkThree{to{transform:translate(-210px,70px) scale(0);opacity:0}}@keyframes sparkFour{to{transform:translate(190px,130px) scale(0);opacity:0}}@keyframes sparkFive{to{transform:translate(-80px,260px) scale(0);opacity:0}}@keyframes sparkSix{to{transform:translate(100px,280px) scale(0);opacity:0}}
 
+.faction-card[data-deck="rio"] { border-color:#00eaff; box-shadow:0 0 12px #00eaff88,0 5px 12px #000a; }
+.faction-card[data-deck="vulcao"] { border-color:#ff304f; box-shadow:0 0 12px #ff304f88,0 5px 12px #000a; }
+.faction-card[data-deck="turbo"] { border-color:#ffe600; box-shadow:0 0 12px #ffe60088,0 5px 12px #000a; }
+.faction-card[data-deck="elite"] { border-color:#d946ff; box-shadow:0 0 12px #d946ff88,0 5px 12px #000a; }
+.faction-card.selected { border-width:3px; filter:brightness(1.13); }
+
+.hand > .card { box-shadow:0 0 12px var(--frame),0 7px 12px #000; }
+.player-rows .row { border:2px solid var(--deck-color,#00eaff); box-shadow:inset 0 0 10px #000,0 0 5px var(--deck-color,#00eaff); }
+.enemy-rows .row { border:2px solid var(--enemy-color,#ff304f); box-shadow:inset 0 0 10px #000,0 0 4px var(--enemy-color,#ff304f); }
+.score-panel.player { border:2px solid var(--deck-color,#00eaff); }
+.score-panel.enemy { border:2px solid var(--enemy-color,#ff304f); }
+.lane { width:66px; padding-left:7px; font-size:8px; line-height:11px; font-weight:900; color:#ffe3a4; text-shadow:0 1px 3px #000; }
+.lane b { font-size:14px; font-weight:900; }
+.score-panel b { font-size:11px; font-weight:900; }
+.score-panel small { font-size:8px; font-weight:700; }
+.belt { font-size:8px; font-weight:900; }
+.card-info b { font-size:10px; font-weight:900; }
+.card-info span,.action-row span { font-size:9px; font-weight:700; }
+
+.defeat-fx { background:radial-gradient(circle,#8c102455 0 15%,#030607f2 68%),url('art/tabuleiro_3d.jpg') center/cover; }
+.defeat-fx:before { background:repeating-linear-gradient(110deg,transparent 0 38px,#ff304f1c 39px 42px); animation:defeatFlicker 3.2s steps(7); }
+.defeat-emblem { animation:defeatDrop 3.2s cubic-bezier(.4,0,.8,1); }
+.defeat-emblem img { filter:grayscale(.65) brightness(.65) sepia(.35) hue-rotate(300deg) drop-shadow(0 0 25px #ff183c); animation:defeatGear 3.2s ease-in-out; }
+.defeat-emblem b { color:#ff304f; font-size:36px; }
+.defeat-emblem span { color:#91a4aa; }
+.defeat-shards i { position:absolute; z-index:3; left:50%; top:42%; width:48px; height:72px; background:linear-gradient(145deg,#69767b,#151a1c); border:2px solid #ff304f; clip-path:polygon(0 0,100% 14%,70% 100%,18% 72%); box-shadow:0 0 12px #ff304f; }
+.defeat-shards i:nth-child(1){animation:shard1 3.2s ease-in}.defeat-shards i:nth-child(2){animation:shard2 3.2s ease-in}.defeat-shards i:nth-child(3){animation:shard3 3.2s ease-in}.defeat-shards i:nth-child(4){animation:shard4 3.2s ease-in}
+.defeat-smoke { position:absolute; inset:35% 10% 0; background:radial-gradient(ellipse,#87929766,transparent 62%); filter:blur(12px); animation:smokeRise 3.2s ease-out; }
+@keyframes defeatFlicker{0%,20%,42%,68%{opacity:.2}10%,35%,55%,100%{opacity:1}}
+@keyframes defeatDrop{0%{opacity:0;transform:translateY(-180px) rotateX(-70deg) scale(1.3)}25%{opacity:1;transform:translateY(18px) rotateX(12deg)}62%{transform:translateY(0) rotateX(0)}100%{opacity:0;transform:translateY(180px) rotateX(40deg) scale(.75)}}
+@keyframes defeatGear{0%{transform:rotateZ(40deg);filter:brightness(3) drop-shadow(0 0 35px #fff)}38%{transform:rotateZ(-12deg)}100%{transform:rotateZ(-38deg);filter:grayscale(1) brightness(.35) drop-shadow(0 0 18px #ff183c)}}
+@keyframes shard1{to{transform:translate(-190px,310px) rotate(240deg);opacity:0}}@keyframes shard2{to{transform:translate(170px,280px) rotate(-190deg);opacity:0}}@keyframes shard3{to{transform:translate(-110px,360px) rotate(310deg);opacity:0}}@keyframes shard4{to{transform:translate(100px,380px) rotate(-270deg);opacity:0}}
+@keyframes smokeRise{0%{opacity:0;transform:translateY(140px) scale(.4)}45%{opacity:.8}100%{opacity:0;transform:translateY(-150px) scale(1.5)}}
+
 @keyframes targetPulse {
   50% { filter: brightness(1.22); }
 }
