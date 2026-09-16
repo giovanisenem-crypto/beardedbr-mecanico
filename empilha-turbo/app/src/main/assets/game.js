@@ -12,7 +12,9 @@ var shelves=[
  {x:80,y:300,w:74,h:245},{x:1118,y:310,w:74,h:245},
  {x:430,y:50,w:130,h:43},{x:705,y:50,w:130,h:43}
 ];
-var selectedPhase=1;\nvar routesStock=[{pick:{x:230,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},{pick:{x:1040,y:690},drop:{x:215,y:150},letter:"B",color:"#70ded4"},{pick:{x:650,y:165},drop:{x:650,y:700},letter:"C",color:"#a8a2ff"},{pick:{x:1020,y:630},drop:{x:260,y:690},letter:"D",color:"#ed9687"}];\nvar routes=[
+var selectedPhase=1;
+var routesStock=[{pick:{x:230,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},{pick:{x:1040,y:690},drop:{x:215,y:150},letter:"B",color:"#70ded4"},{pick:{x:650,y:165},drop:{x:650,y:700},letter:"C",color:"#a8a2ff"},{pick:{x:1020,y:630},drop:{x:260,y:690},letter:"D",color:"#ed9687"}];
+var routes=[
  {pick:{x:270,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},
  {pick:{x:1040,y:690},drop:{x:215,y:150},letter:"B",color:"#70ded4"},
  {pick:{x:650,y:165},drop:{x:650,y:700},letter:"C",color:"#a8a2ff"}
