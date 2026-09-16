@@ -13,6 +13,7 @@ var shelves=[
  {x:430,y:50,w:130,h:43},{x:705,y:50,w:130,h:43}
 ];
 var selectedPhase=1;
+function playerPaint(){return !driver?"#f4b337":({giovani:"#f4b337",vitorino:"#ef7c2d",jean:"#4db8d0",andre:"#516b8a",valentina:"#ed6298"}[driver.id]||"#f4b337");}
 var routesStock=[{pick:{x:230,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},{pick:{x:1040,y:690},drop:{x:215,y:150},letter:"B",color:"#70ded4"},{pick:{x:650,y:165},drop:{x:650,y:700},letter:"C",color:"#a8a2ff"},{pick:{x:1020,y:630},drop:{x:260,y:690},letter:"D",color:"#ed9687"}];
 var routes=[
  {pick:{x:270,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},
@@ -50,7 +51,7 @@ function showToast(text,duration){$("toast").textContent=text;$("toast").classLi
 function overlays(which){["menu","paused","result","workshop"].forEach(function(id){$(id).hidden=id!==which;});}
 function menuInfo(){
  var pick=$("driver-pick");if(!pick){pick=document.createElement("div");pick.id="driver-pick";document.querySelector("#menu .menu-card").insertBefore(pick,$("start"));}pick.innerHTML=drivers.map(function(d){return '<button class="driver-card '+(driver&&driver.id===d.id?"chosen":"")+'" data-driver="'+d.id+'"><span class="portrait portrait-'+d.id+'"></span><span class="driver-copy"><b>'+d.name+'</b><small>'+d.role+'</small><em>'+d.skill+'</em></span></button>';}).join("");Array.prototype.forEach.call(pick.querySelectorAll("button"),function(b){b.onclick=function(){driver=drivers.filter(function(d){return d.id===b.dataset.driver;})[0];menuInfo();};});
- var phases=$("phase-pick");if(!phases){phases=document.createElement("div");phases.id="phase-pick";document.querySelector("#menu .menu-card").insertBefore(phases,$("start"));}phases.innerHTML='<button class="phase-card '+(selectedPhase===1?"chosen":"")+'" data-phase="1"><b>01 · RECEBIMENTO</b><small>3 entregas</small></button><button class="phase-card '+(selectedPhase===2?"chosen":"")+'" data-phase="2"><b>02 · ESTOQUE</b><small>4 pallets por cor</small></button><button class="phase-card '+(selectedPhase===3?"chosen":"")+'" data-phase="3"><b>03 · PRODUÇÃO</b><small>5 entregas na linha</small></button>';Array.prototype.forEach.call(phases.querySelectorAll("button"),function(b){b.onclick=function(){selectedPhase=+b.dataset.phase;makeTerrain();menuInfo();};});
+ var phases=$("phase-pick");if(!phases){phases=document.createElement("div");phases.id="phase-pick";document.querySelector("#menu .menu-card").insertBefore(phases,$("start"));}var phaseCard=function(n,title,detail){var stars=(saved.stars&&saved.stars[n-1])||0,marks="★".repeat(stars)+"☆".repeat(3-stars);return '<button class="phase-card '+(selectedPhase===n?"chosen":"")+'" data-phase="'+n+'"><b>'+title+'</b><small>'+detail+'</small><em class="phase-stars">'+marks+'</em></button>';};phases.innerHTML=phaseCard(1,"01 · RECEBIMENTO","3 entregas")+phaseCard(2,"02 · ESTOQUE","4 pallets por cor")+phaseCard(3,"03 · PRODUÇÃO","5 entregas na linha");Array.prototype.forEach.call(phases.querySelectorAll("button"),function(b){b.onclick=function(){selectedPhase=+b.dataset.phase;makeTerrain();menuInfo();};});
  $("credits-menu").textContent=saved.credits+" CR";
  $("best").textContent=saved.best?"RECORDE: "+saved.best+" PTS"+(saved.bestTime?" · "+formatTime(saved.bestTime):""):"Seu primeiro turno começa aqui.";
  $("sound").textContent=saved.sound?"SOM LIGADO":"SOM DESLIGADO";$("sound").setAttribute("aria-pressed",String(saved.sound));
@@ -71,14 +72,14 @@ function goMenu(){state.phase="menu";stopInputs();overlays("menu");$("hud").hidd
 function finish(won){
  if(state.phase!=="playing")return;
  state.phase="result";stopInputs();
- var score=C.score(state.deliveries,state.integritySum,state.time,won),credit=C.credits(state.deliveries,state.integritySum,won)+(won?(phaseData().reward||0):0),record=score>saved.best;
+ var score=C.score(state.deliveries,state.integritySum,state.time,won),credit=C.credits(state.deliveries,state.integritySum,won)+(won?(phaseData().reward||0):0),record=score>saved.best,avg=state.deliveries?state.integritySum/state.deliveries:0,earnedStars=won?(state.time>=50&&avg>=85?3:(avg>=60?2:1)):0;if(!saved.stars)saved.stars=[0,0,0];saved.stars[selectedPhase-1]=Math.max(saved.stars[selectedPhase-1]||0,earnedStars);
  saved.credits+=credit;saved.best=Math.max(saved.best,score);
  if(won&&(saved.bestTime===null||state.elapsed<saved.bestTime))saved.bestTime=state.elapsed;
  persist();state.score=score;
  $("result-eyebrow").textContent=record?"NOVO RECORDE DA OFICINA":"FIM DO TURNO";
  $("result-title").textContent=won?(selectedPhase===2?"ESTOQUE ORGANIZADO!":"TURNO CONCLUÍDO!"):"O APITO TOCOU!";
  $("result-joke").textContent=won?(selectedPhase===2?"Quatro cargas certas. O estoque agradece.":"O chefe disse que foi sorte. O pallet discorda."):"A empilhadeira estava pronta. O relógio é que correu demais.";
- $("result-score").textContent=score;$("result-credits").textContent="+"+credit+" CR";
+ $("result-score").textContent=score;$("result-credits").textContent="+"+credit+" CR";$("result-stars").textContent=earnedStars?"★".repeat(earnedStars)+"☆".repeat(3-earnedStars):"☆☆☆";
  $("result-detail").textContent=state.deliveries+" de "+phaseData().deliveries+" entregas · Integridade média: "+(state.deliveries?Math.round(state.integritySum/state.deliveries):0)+"%";
  $("controls").hidden=true;overlays("result");won?deliverySound():tone(135,.4,"triangle",.055);
 }
@@ -172,7 +173,7 @@ function forklift(g,x,y,angle,color,cargo,isPlayer){
  g.save();g.translate(x,y);g.rotate(angle);
  g.fillStyle="#0006";g.beginPath();g.ellipse(1,5,36,23,0,0,Math.PI*2);g.fill();
  g.fillStyle="#101a20";[[-20,-24],[-20,16],[15,-24],[15,16]].forEach(function(w){rr(g,w[0],w[1],12,8,2,"#11191f","#546169");g.fillStyle="#79827f";g.fillRect(w[0]+3,w[1]+2,6,1);});
- rr(g,-29,-17,53,34,6,color,"#ffdfa355");g.fillStyle="#ffffff24";g.fillRect(-24,-15,33,4);
+ rr(g,-29,-17,53,34,6,color,"#ffdfa355");g.fillStyle="#10191d";g.fillRect(-27,7,31,5);g.fillStyle="#ffd45c";g.fillRect(-26,8,14,2);g.fillStyle="#ffffff24";g.fillRect(-24,-15,33,4);
  rr(g,-23,-10,13,20,3,"#473e2b");g.fillStyle="#161f23";for(var i=0;i<4;i++)g.fillRect(-20+i*3,-7,1,14);
  rr(g,-6,-14,20,28,3,"#172930","#8ba6a0");rr(g,-2,-10,12,20,3,"#526570");
  g.fillStyle="#1c3036";g.beginPath();g.arc(4,0,7,0,Math.PI*2);g.fill();g.fillStyle="#f0ba74";g.beginPath();g.arc(5,0,4,0,Math.PI*2);g.fill();
@@ -183,7 +184,7 @@ function forklift(g,x,y,angle,color,cargo,isPlayer){
  g.fillStyle="#ffbc42";g.beginPath();g.arc(-7,-1,3,0,Math.PI*2);g.fill();
  if(Math.sin(clock*8+(isPlayer?0:2))>.3){g.fillStyle="#ffbf4366";g.beginPath();g.arc(-7,-1,8,0,Math.PI*2);g.fill();}
  if(cargo)pallet(g,43,0,route().letter,route().color,.72);
- if(isPlayer){g.save();g.globalAlpha=.18+Math.sin(clock*7)*.035;g.fillStyle="#ffe19a";g.beginPath();g.moveTo(20,-10);g.lineTo(145,-70);g.lineTo(145,70);g.lineTo(20,10);g.closePath();g.fill();g.restore();g.fillStyle="#94f2e3";g.fillRect(-29,-7,3,5);g.fillRect(-29,3,3,5);}
+ if(isPlayer){g.fillStyle="#101b20";g.fillRect(-24,10,22,6);g.fillStyle="#ffe19a";g.font="bold 5px monospace";g.textAlign="center";g.fillText("BRD-FX", -13,15);g.save();g.globalAlpha=.18+Math.sin(clock*7)*.035;g.fillStyle="#ffe19a";g.beginPath();g.moveTo(20,-10);g.lineTo(145,-70);g.lineTo(145,70);g.lineTo(20,10);g.closePath();g.fill();g.restore();g.fillStyle="#94f2e3";g.fillRect(-29,-7,3,5);g.fillRect(-29,3,3,5);}
  g.restore();
 }
 var terrain=document.createElement("canvas");terrain.width=WORLD.w;terrain.height=WORLD.h;
@@ -246,7 +247,7 @@ function render(){
   traffic.forEach(function(b){forklift(ctx,b.x,b.y,b.angle,b.color,false,false);});
  }
  if(state.phase==="menu"||state.phase==="workshop"){routes.forEach(function(r){pallet(ctx,r.pick.x,r.pick.y,r.letter,r.color,1);});forklift(ctx,865,670,-.25,"#ffb52e",false,true);}
- else forklift(ctx,player.x,player.y,player.angle,state.damageCooldown>.8?"#ffe6a0":"#f4b337",!!state.cargo,true);
+ else forklift(ctx,player.x,player.y,player.angle,state.damageCooldown>.8?"#ffe6a0":playerPaint(),!!state.cargo,true);
  particles.forEach(function(p){ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size);});ctx.globalAlpha=1;
  ctx.restore();
  if(state.phase==="playing"&&state.deliveries<phaseData().deliveries){
