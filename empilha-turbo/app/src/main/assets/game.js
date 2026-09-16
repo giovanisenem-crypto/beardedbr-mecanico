@@ -12,7 +12,7 @@ var shelves=[
  {x:80,y:300,w:74,h:245},{x:1118,y:310,w:74,h:245},
  {x:430,y:50,w:130,h:43},{x:705,y:50,w:130,h:43}
 ];
-var routes=[
+var selectedPhase=1;\nvar routesStock=[{pick:{x:230,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},{pick:{x:1040,y:690},drop:{x:215,y:150},letter:"B",color:"#70ded4"},{pick:{x:650,y:165},drop:{x:650,y:700},letter:"C",color:"#a8a2ff"},{pick:{x:1020,y:630},drop:{x:260,y:690},letter:"D",color:"#ed9687"}];\nvar routes=[
  {pick:{x:270,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},
  {pick:{x:1040,y:690},drop:{x:215,y:150},letter:"B",color:"#70ded4"},
  {pick:{x:650,y:165},drop:{x:650,y:700},letter:"C",color:"#a8a2ff"}
@@ -68,10 +68,10 @@ function finish(won){
  $("result-title").textContent=won?"TURNO CONCLUÍDO!":"O APITO TOCOU!";
  $("result-joke").textContent=won?"O chefe disse que foi sorte. O pallet discorda.":"A empilhadeira estava pronta. O relógio é que correu demais.";
  $("result-score").textContent=score;$("result-credits").textContent="+"+credit+" CR";
- $("result-detail").textContent=state.deliveries+" de 3 entregas · Integridade média: "+(state.deliveries?Math.round(state.integritySum/state.deliveries):0)+"%";
+ $("result-detail").textContent=state.deliveries+" de "+phaseData().deliveries+" entregas · Integridade média: "+(state.deliveries?Math.round(state.integritySum/state.deliveries):0)+"%";
  $("controls").hidden=true;overlays("result");won?deliverySound():tone(135,.4,"triangle",.055);
 }
-function route(){return routes[Math.min(state.deliveries,2)];}
+function phaseData(){return (window.EmpilhaPhases||[])[selectedPhase-1]||{deliveries:3,time:150};}function activeRoutes(){return selectedPhase===2?routesStock:routes;}function route(){var list=activeRoutes();return list[Math.min(state.deliveries,list.length-1)];}
 function objectivePoint(){var r=route();return state.cargo?r.drop:r.pick;}
 function canAction(){var t=objectivePoint();return len(player.x-t.x,player.y-t.y)<(state.cargo?90:76)&&len(player.vx,player.vy)<95;}
 function action(){
@@ -81,7 +81,7 @@ function action(){
  if(!state.cargo){state.cargo={integrity:100};pickupSound();burst(player.x,player.y,r.color,12);showToast("Carga presa! Agora siga para a doca "+r.letter+".",2.1);}
  else{
   state.integritySum+=state.cargo.integrity;state.deliveries++;state.cargo=null;burst(player.x,player.y,"#95f2c6",28);deliverySound();
-  if(state.deliveries===3){finish(true);return;}
+  if(state.deliveries===phaseData().deliveries){finish(true);return;}
   showToast("ENTREGA FEITA! Busque o próximo pallet.",2);
  }
  uiTimer=1;updateUI();
@@ -98,7 +98,7 @@ function impact(speed){
 }
 function updateUI(){
  $("time").textContent=formatTime(state.time);$("time").parentElement.classList.toggle("danger",state.time<25);
- $("deliveries").textContent=state.deliveries+" / 3";$("cargo-label").textContent=state.cargo?"INTEGRIDADE DA CARGA":"SEM CARGA";
+ $("deliveries").textContent=state.deliveries+" / "+phaseData().deliveries;$("cargo-label").textContent=state.cargo?"INTEGRIDADE DA CARGA":"SEM CARGA";
  $("integrity").textContent=state.cargo?Math.ceil(state.cargo.integrity)+"%":"BUSQUE O PALLET";
  $("integrity").style.color=state.cargo&&state.cargo.integrity<40?"#ff8f78":"";
  $("action-label").textContent=state.cargo?"ENTREGAR":"PEGAR";$("action").classList.toggle("ready",canAction());
@@ -219,7 +219,7 @@ function render(){
  tireMarks.forEach(function(m){ctx.save();ctx.translate(m.x,m.y);ctx.rotate(m.angle);ctx.fillStyle="#12211e14";ctx.fillRect(-6,-21,12,4);ctx.fillRect(-6,17,12,4);ctx.restore();});
  if(state.phase==="playing"||state.phase==="paused"||state.phase==="result"){
   var r=route(),t=objectivePoint();
-  if(state.deliveries<3){
+  if(state.deliveries<phaseData().deliveries){
    var pulse=.5+.5*Math.sin(clock*4);ctx.strokeStyle=state.cargo?"#8bf4bb":r.color;ctx.lineWidth=2;ctx.globalAlpha=.55+pulse*.3;
    ctx.beginPath();ctx.ellipse(t.x,t.y,54+pulse*5,40+pulse*4,0,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
    if(!state.cargo)pallet(ctx,t.x,t.y,r.letter,r.color,1);
@@ -231,7 +231,7 @@ function render(){
  else forklift(ctx,player.x,player.y,player.angle,state.damageCooldown>.8?"#ffe6a0":"#f4b337",!!state.cargo,true);
  particles.forEach(function(p){ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size);});ctx.globalAlpha=1;
  ctx.restore();
- if(state.phase==="playing"&&state.deliveries<3){
+ if(state.phase==="playing"&&state.deliveries<phaseData().deliveries){
   var p=objectivePoint(),sx=(p.x-cx)*zoom+W/2,sy=(p.y-cy)*zoom+H/2;
   if(sx<50||sx>W-50||sy<130||sy>H-110){
    var dx=sx-W/2,dy=sy-H/2,a=Math.atan2(dy,dx),arx=clamp(sx,49,W-49),ary=clamp(sy,135,H-125);
