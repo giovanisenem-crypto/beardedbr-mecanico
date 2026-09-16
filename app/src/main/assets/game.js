@@ -59,7 +59,7 @@
     { x: W * 4 + 1070, min: W * 4 + 970, max: W * 4 + 1170, y: 548, dir: -1, alive: true },
     { x: W * 6 + 760, min: W * 6 + 625, max: W * 6 + 905, y: 548, dir: 1, alive: true }
   ];
-  enemies.forEach(enemy => { enemy.startX = enemy.x; enemy.startDir = enemy.dir; });
+  enemies.forEach(enemy => { enemy.startX = enemy.x; enemy.startDir = enemy.dir; enemy.hp = 2; enemy.hitFlash = 0; });
   const collectibles = [
     { x: 240, y: 468 }, { x: 835, y: 468 }, { x: 1375, y: 468 },
     { x: W + 630, y: 201 }, { x: W + 1160, y: 201 }, { x: W + 1400, y: 468 },
@@ -70,7 +70,7 @@
     { x: W * 6 + 730, y: 468 }, { x: W * 6 + 960, y: 243 }, { x: W * 6 + 1210, y: 468 }
   ].map(item => ({ ...item, picked: false }));
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
-  const keys = { left: false, right: false, jump: false };
+  const keys = { left: false, right: false, jump: false, attack: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
     x: (i * 431) % WORLD_W, y: 260 + (i * 83) % 310, vx: 15 + (i % 5) * 9,
     vy: -42 - (i % 7) * 8, life: (i % 13) / 13, size: 2 + (i % 3)
@@ -78,11 +78,11 @@
   const smoke = Array.from({ length: 22 }, (_, i) => ({
     x: (i * 617 + 300) % WORLD_W, y: 510 - (i % 4) * 48, phase: i * .7, size: 65 + (i % 4) * 24
   }));
-  const bursts = [];
+  const bursts = [], projectiles = [];
   let playing = false, paused = false, last = 0, deaths = 0, defeats = 0, collected = 0, points = 0, won = false, cameraX = 0, checkpointIndex = -1;
   let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
   let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
-  let fpsClock = 0, fpsFrames = 0;
+  let fpsClock = 0, fpsFrames = 0, shootCooldown = 0;
 
   function pressState(press) {
     const t = (pressClock + press.phase) % 6.6;
@@ -174,10 +174,43 @@
       life: .35 + Math.random() * .4, size: 3 + Math.random() * 5
     });
   }
+  function destroyEnemy(enemy, message = 'SENTINELA DESTRUÍDO') {
+    if (!enemy.alive) return;
+    enemy.alive = false; defeats++; points += 250; burstAt(enemy.x, enemy.y - 72); shake = 8;
+    tone(105, .22, 'sawtooth', .05); flash(message, 700); updateHud();
+  }
+  function fireRivet() {
+    projectiles.push({
+      x: player.x + player.facing * 52, y: player.y - player.h * .55,
+      vx: player.facing * 780, life: 1.65, dir: player.facing
+    });
+    player.vx -= player.facing * 22;
+    tone(190, .09, 'square', .032); tone(760, .045, 'triangle', .014);
+  }
+  function updateProjectiles(dt) {
+    enemies.forEach(enemy => { enemy.hitFlash = Math.max(0, enemy.hitFlash - dt); });
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const shot = projectiles[i]; shot.x += shot.vx * dt; shot.life -= dt;
+      let hit = false;
+      for (const enemy of enemies) {
+        if (!enemy.alive) continue;
+        if (Math.abs(shot.x - enemy.x) < 70 && shot.y > enemy.y - 132 && shot.y < enemy.y - 8) {
+          hit = true; enemy.hp--; enemy.hitFlash = .16; burstAt(shot.x, shot.y);
+          tone(320, .07, 'square', .025);
+          if (enemy.hp <= 0) destroyEnemy(enemy, 'SENTINELA DESMONTADO PELOS REBITES');
+          break;
+        }
+      }
+      if (hit || shot.life <= 0 || shot.x < 0 || shot.x > WORLD_W) projectiles.splice(i, 1);
+    }
+  }
   function update(dt) {
     updateParticles(dt);
     if (!playing || paused || won) return;
     pressClock += dt;
+    shootCooldown = Math.max(0, shootCooldown - dt);
+    if (keys.attack && shootCooldown <= 0) { fireRivet(); shootCooldown = .48; }
+    updateProjectiles(dt);
     shake *= Math.pow(.012, dt);
     if (shake < .2) shake = 0;
     const accel = player.grounded ? 2750 : 1750;
@@ -217,8 +250,7 @@
       const pLeft = player.x - player.w * .3, pRight = player.x + player.w * .3, pTop = player.y - player.h * .86;
       if (pRight > eLeft && pLeft < eRight && player.y > eTop + 10 && pTop < enemy.y - 8) {
         if (player.vy > 120 && prevFoot <= eTop + 28) {
-          enemy.alive = false; defeats++; points += 250; player.y = eTop; player.vy = -690; player.grounded = false;
-          burstAt(enemy.x, eTop + 48); shake = 8; flash('SENTINELA DESTRUÍDO', 700); updateHud();
+          destroyEnemy(enemy); player.y = eTop; player.vy = -690; player.grounded = false;
         } else sentinelHit = true;
       }
     });
@@ -336,9 +368,27 @@
       ctx.save(); ctx.translate(x, enemy.y + bob);
       if (enemy.dir < 0) ctx.scale(-1, 1);
       ctx.drawImage(sentinelSprite, -72, -138, 144, 138);
+      if (enemy.hitFlash > 0) {
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, enemy.hitFlash * 5);
+        ctx.drawImage(sentinelSprite, -72, -138, 144, 138);
+      }
       ctx.globalCompositeOperation = 'lighter';
       ctx.fillStyle = `rgba(255,102,18,${.12 + Math.sin(performance.now() * .008 + i) * .04})`;
       ctx.beginPath(); ctx.arc(42, -85, 25, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    });
+  }
+  function drawProjectiles() {
+    projectiles.forEach(shot => {
+      const x = shot.x - cameraX; if (x < -50 || x > W + 50) return;
+      ctx.save(); ctx.translate(x, shot.y); if (shot.dir < 0) ctx.scale(-1, 1);
+      ctx.globalCompositeOperation = 'lighter';
+      const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, 24);
+      glow.addColorStop(0, 'rgba(220,248,255,1)'); glow.addColorStop(.35, 'rgba(77,194,255,.75)'); glow.addColorStop(1, 'rgba(34,120,255,0)');
+      ctx.fillStyle = glow; ctx.fillRect(-25, -25, 50, 50);
+      const steel = ctx.createLinearGradient(-18, -6, 18, 6);
+      steel.addColorStop(0, '#2d3337'); steel.addColorStop(.35, '#eaf5f6'); steel.addColorStop(.65, '#718084'); steel.addColorStop(1, '#22282b');
+      ctx.fillStyle = steel; ctx.beginPath(); ctx.roundRect(-20, -6, 40, 12, 6); ctx.fill();
+      ctx.fillStyle = '#8fe5ff'; ctx.fillRect(12, -3, 13, 6); ctx.restore();
     });
   }
   function drawPresses() {
@@ -376,6 +426,7 @@
     });
     drawAtmosphere();
     drawObjectives();
+    drawProjectiles();
     drawEnemies();
     if (heroSheet.complete) drawHero();
     drawPresses();
@@ -400,14 +451,15 @@
   }
   function startNewRun() {
     deaths = 0; defeats = 0; collected = 0; points = 0; checkpointIndex = -1; pressClock = 0;
-    enemies.forEach(enemy => { enemy.x = enemy.startX; enemy.dir = enemy.startDir; enemy.alive = true; });
+    enemies.forEach(enemy => { enemy.x = enemy.startX; enemy.dir = enemy.startDir; enemy.alive = true; enemy.hp = 2; enemy.hitFlash = 0; });
     collectibles.forEach(item => { item.picked = false; });
     presses.forEach(press => { press.wasDown = false; });
+    projectiles.length = 0; shootCooldown = 0; keys.attack = false;
     ui.result.classList.add('hidden'); ui.controls.classList.remove('hidden');
     paused = false; playing = true; reset(); setAudioLevel();
     flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
   }
-  bindHold('#left','left'); bindHold('#right','right'); bindHold('#jump','jump');
+  bindHold('#left','left'); bindHold('#right','right'); bindHold('#jump','jump'); bindHold('#attack','attack');
   document.querySelector('#start').addEventListener('click', () => {
     initSiren(); if (audioContext?.state === 'suspended') audioContext.resume();
     ui.intro.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
@@ -422,8 +474,8 @@
   document.querySelector('#pause').addEventListener('click', () => {
     paused = !paused; if (paused) updateSiren(false); setAudioLevel(); flash(paused ? 'PAUSADO' : 'CONTINUAR', 700);
   });
-  addEventListener('keydown', e => { if (e.key === 'ArrowLeft') keys.left = true; if (e.key === 'ArrowRight') keys.right = true; if (['ArrowUp',' '].includes(e.key)) keys.jump = true; });
-  addEventListener('keyup', e => { if (e.key === 'ArrowLeft') keys.left = false; if (e.key === 'ArrowRight') keys.right = false; if (['ArrowUp',' '].includes(e.key)) keys.jump = false; });
+  addEventListener('keydown', e => { if (e.key === 'ArrowLeft') keys.left = true; if (e.key === 'ArrowRight') keys.right = true; if (['ArrowUp',' '].includes(e.key)) keys.jump = true; if (['z','x','Enter'].includes(e.key)) keys.attack = true; });
+  addEventListener('keyup', e => { if (e.key === 'ArrowLeft') keys.left = false; if (e.key === 'ArrowRight') keys.right = false; if (['ArrowUp',' '].includes(e.key)) keys.jump = false; if (['z','x','Enter'].includes(e.key)) keys.attack = false; });
   window.ForjaGame = { back() { if (playing) { paused = true; flash('PAUSADO'); return true; } return false; } };
   requestAnimationFrame(loop);
 })();
