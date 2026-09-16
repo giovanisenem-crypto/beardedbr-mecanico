@@ -47,10 +47,7 @@
   ];
   const spawn = { x: 165, y: 548 };
   const checkpoints = [{ x: W * 2 + 918, y: 548 }, { x: W * 4 + 1118, y: 548 }];
-  const presses = [
-    { x: W * 5 + 720, phase: 0, wasDown: false },
-    { x: W * 5 + 980, phase: 2.35, wasDown: false }
-  ];
+  const presses = [{ x: W * 5 + 850, phase: 0, wasDown: false }];
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
   const keys = { left: false, right: false, jump: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
@@ -65,31 +62,31 @@
   let fpsClock = 0, fpsFrames = 0;
 
   function pressState(press) {
-    const t = (pressClock + press.phase) % 5;
-    const restY = -180, impactY = 118;
-    let y = restY;
-    if (t >= 3.2 && t < 3.45) {
-      const k = (t - 3.2) / .25; y = restY + (impactY - restY) * k * k * k;
-    } else if (t >= 3.45 && t < 3.8) y = impactY;
-    else if (t >= 3.8) {
-      const k = Math.min(1, (t - 3.8) / 1.2); y = impactY - (impactY - restY) * k;
+    const t = (pressClock + press.phase) % 6;
+    const restY = 135, impactY = 398;
+    let footY = restY;
+    if (t >= 4.4 && t < 4.7) {
+      const k = (t - 4.4) / .3; footY = restY + (impactY - restY) * k * k * k;
+    } else if (t >= 4.7 && t < 5.05) footY = impactY;
+    else if (t >= 5.05) {
+      const k = Math.min(1, (t - 5.05) / .95); footY = impactY - (impactY - restY) * k;
     }
-    return { y, bottom: y + 430, warning: t >= 2.2 && t < 3.2, down: t >= 3.45 && t < 3.8 };
+    return { footY, bottom: footY + 150, warning: t >= 3.2 && t < 4.4, down: t >= 4.7 && t < 5.05 };
   }
   function initSiren() {
     if (audioContext) return;
     try {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
       sirenOscillator = audioContext.createOscillator(); sirenGain = audioContext.createGain();
-      sirenOscillator.type = 'sawtooth'; sirenGain.gain.value = 0;
+      sirenOscillator.type = 'sine'; sirenGain.gain.value = 0;
       sirenOscillator.connect(sirenGain).connect(audioContext.destination); sirenOscillator.start();
     } catch (_) { audioContext = null; }
   }
   function updateSiren(warning) {
     if (!audioContext || !sirenGain || !sirenOscillator) return;
     const now = audioContext.currentTime;
-    sirenGain.gain.setTargetAtTime(warning && !paused ? .035 : 0, now, .045);
-    if (warning) sirenOscillator.frequency.setValueAtTime(610 + Math.sin(pressClock * 9) * 160, now);
+    sirenGain.gain.setTargetAtTime(warning && !paused ? .012 : 0, now, .11);
+    if (warning) sirenOscillator.frequency.setValueAtTime(430 + Math.sin(pressClock * 5) * 70, now);
   }
 
   function sector() { return Math.min(7, Math.floor(player.x / W) + 1); }
@@ -204,13 +201,23 @@
       const state = pressState(press), x = press.x - cameraX;
       if (x < -180 || x > W + 180) return;
       if (state.warning) {
-        const pulse = .45 + Math.sin(pressClock * 18) * .25;
+        const pulse = .34 + Math.sin(pressClock * 10) * .16;
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = `rgba(255,55,0,${pulse})`; ctx.fillRect(x - 122, 530, 244, 18);
-        ctx.beginPath(); ctx.arc(x, Math.max(38, state.y + 385), 24 + pulse * 18, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,70,0,${pulse})`; ctx.fillRect(x - 126, 533, 252, 15);
+        ctx.beginPath(); ctx.arc(x, 118, 19 + pulse * 13, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,80,0,${pulse * .7})`; ctx.fill(); ctx.restore();
       }
-      ctx.drawImage(pressSprite, x - 127, state.y, 254, 430);
+      // Upper housing stays bolted to the ceiling; only the piston and crushing foot move.
+      ctx.drawImage(pressSprite, 0, 0, 965, 620, x - 127, -18, 254, 163);
+      const rodTop = 126, rodBottom = state.footY + 24;
+      if (rodBottom > rodTop) {
+        const chrome = ctx.createLinearGradient(x - 42, 0, x + 42, 0);
+        chrome.addColorStop(0, '#272b2e'); chrome.addColorStop(.24, '#d8e0e2');
+        chrome.addColorStop(.52, '#586064'); chrome.addColorStop(.78, '#f1f3ef'); chrome.addColorStop(1, '#24272a');
+        ctx.fillStyle = chrome; ctx.fillRect(x - 42, rodTop, 84, rodBottom - rodTop);
+        ctx.fillStyle = 'rgba(255,125,28,.35)'; ctx.fillRect(x + 34, rodTop, 5, rodBottom - rodTop);
+      }
+      ctx.drawImage(pressSprite, 0, 1080, 965, 550, x - 127, state.footY, 254, 150);
     });
   }
   function draw() {
