@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const W = 1672, H = 941, WORLD_W = W * 3;
+  const W = 1672, H = 941, WORLD_W = W * 7;
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
   ctx.imageSmoothingEnabled = true;
@@ -11,50 +11,64 @@
     status: document.querySelector('#status'), fps: document.querySelector('#fps'),
     message: document.querySelector('#message'), messageText: document.querySelector('#message div')
   };
-  const backgrounds = ['art/forge_stage.webp', 'art/forge_stage_02.webp', 'art/forge_stage_03.webp'].map(src => {
-    const image = new Image(); image.src = src; return image;
-  });
-  const heroSheet = new Image(); heroSheet.src = 'art/mechanic_sheet.webp';
+  const backgroundSources = [
+    'art/forge_stage.webp', 'art/forge_stage_02.webp', 'art/forge_stage_03.webp',
+    'art/forge_stage_04.webp', 'art/forge_stage_05.webp', 'art/forge_stage_06.webp',
+    'art/forge_stage_07.webp'
+  ];
+  const backgrounds = backgroundSources.map(() => new Image());
+  const heroSheet = new Image();
   let loaded = 0;
   const ready = () => {
-    if (++loaded === 4) setTimeout(() => {
+    if (++loaded === backgrounds.length + 1) setTimeout(() => {
       ui.loading.classList.add('hidden'); ui.intro.classList.remove('hidden'); draw();
     }, 650);
   };
-  backgrounds.forEach(image => image.onload = ready); heroSheet.onload = ready;
+  backgrounds.forEach((image, i) => { image.onload = ready; image.src = backgroundSources[i]; });
+  heroSheet.onload = ready; heroSheet.src = 'art/mechanic_sheet.webp';
 
-  // Every collider follows a visible steel surface in one of the three background panels.
+  // Every collider follows a visible steel surface in one of the seven background panels.
   const platforms = [
     { x1: 0, x2: 570, y: 548 }, { x1: 665, x2: 1007, y: 548 }, { x1: 1100, x2: W, y: 548 },
     { x1: W, x2: W + 455, y: 548 }, { x1: W + 598, x2: W + 1010, y: 548 }, { x1: W + 1220, x2: W * 2, y: 548 },
     { x1: W + 527, x2: W + 730, y: 281 }, { x1: W + 1044, x2: W + 1280, y: 281 },
-    { x1: W * 2, x2: W * 2 + 455, y: 548 }, { x1: W * 2 + 555, x2: W * 2 + 979, y: 548 }, { x1: W * 2 + 1100, x2: WORLD_W, y: 548 }
+    { x1: W * 2, x2: W * 2 + 470, y: 548 }, { x1: W * 2 + 620, x2: W * 2 + 1135, y: 548 }, { x1: W * 2 + 1270, x2: W * 3, y: 548 },
+    { x1: W * 3, x2: W * 3 + 465, y: 548 }, { x1: W * 3 + 1160, x2: W * 4, y: 548 },
+    { x1: W * 3 + 595, x2: W * 3 + 830, y: 417 }, { x1: W * 3 + 795, x2: W * 3 + 1040, y: 270 }, { x1: W * 3 + 955, x2: W * 3 + 1190, y: 418 },
+    { x1: W * 4, x2: W * 4 + 378, y: 548 }, { x1: W * 4 + 480, x2: W * 4 + 798, y: 548 },
+    { x1: W * 4 + 905, x2: W * 4 + 1232, y: 548 }, { x1: W * 4 + 1328, x2: W * 5, y: 548 },
+    { x1: W * 4 + 640, x2: W * 4 + 900, y: 335 }, { x1: W * 4 + 1086, x2: W * 4 + 1350, y: 294 },
+    { x1: W * 5, x2: W * 5 + 450, y: 548 }, { x1: W * 5 + 626, x2: W * 5 + 1105, y: 548 }, { x1: W * 5 + 1250, x2: W * 6, y: 548 },
+    { x1: W * 5 + 1168, x2: W * 5 + 1415, y: 323 },
+    { x1: W * 6, x2: W * 6 + 452, y: 548 }, { x1: W * 6 + 554, x2: W * 6 + 970, y: 548 }, { x1: W * 6 + 1083, x2: WORLD_W, y: 548 },
+    { x1: W * 6 + 833, x2: W * 6 + 1122, y: 323 }
   ];
   const spawn = { x: 165, y: 548 };
-  const checkpoint = { x: W * 2 + 755, y: 548, active: false };
+  const checkpoints = [{ x: W * 2 + 918, y: 548 }, { x: W * 4 + 1118, y: 548 }];
+  const presses = [{ x1: W * 5 + 635, x2: W * 5 + 785, phase: 0 }, { x1: W * 5 + 915, x2: W * 5 + 1065, phase: 1.35 }];
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
   const keys = { left: false, right: false, jump: false };
-  const sparks = Array.from({ length: 34 }, (_, i) => ({
+  const sparks = Array.from({ length: 54 }, (_, i) => ({
     x: (i * 431) % WORLD_W, y: 260 + (i * 83) % 310, vx: 15 + (i % 5) * 9,
     vy: -42 - (i % 7) * 8, life: (i % 13) / 13, size: 2 + (i % 3)
   }));
-  const smoke = Array.from({ length: 12 }, (_, i) => ({
+  const smoke = Array.from({ length: 22 }, (_, i) => ({
     x: (i * 617 + 300) % WORLD_W, y: 510 - (i % 4) * 48, phase: i * .7, size: 65 + (i % 4) * 24
   }));
-  let playing = false, paused = false, last = 0, deaths = 0, won = false, cameraX = 0;
+  let playing = false, paused = false, last = 0, deaths = 0, won = false, cameraX = 0, checkpointIndex = -1;
   let fpsClock = 0, fpsFrames = 0;
 
-  function sector() { return Math.min(3, Math.floor(player.x / W) + 1); }
+  function sector() { return Math.min(7, Math.floor(player.x / W) + 1); }
   function updateHud() {
-    const names = ['PISO DE FUNDIÇÃO', 'PRENSAS E PASSARELAS', 'PORTÃO DA FORJA'];
+    const names = ['PISO DE FUNDIÇÃO', 'PASSARELAS', 'LAMINAÇÃO', 'TORRE VERTICAL', 'LINHA DE FUNDIÇÃO', 'SALÃO DE PRENSAS', 'PORTÃO DA FORJA'];
     ui.status.textContent = `SETOR 0${sector()} · ${names[sector() - 1]} · QUEDAS ${deaths}`;
   }
   function reset(showText = false) {
-    const safe = checkpoint.active ? checkpoint : spawn;
+    const safe = checkpointIndex >= 0 ? checkpoints[checkpointIndex] : spawn;
     player.x = safe.x; player.y = safe.y; player.vx = 0; player.vy = 0;
     player.grounded = true; player.frame = 0; cameraX = Math.max(0, Math.min(WORLD_W - W, player.x - W * .28));
     won = false; updateHud();
-    if (showText) flash(checkpoint.active ? 'QUEDA — RETORNANDO AO CHECKPOINT' : 'QUEDA — VOLTANDO AO INÍCIO', 950);
+    if (showText) flash(checkpointIndex >= 0 ? 'QUEDA — RETORNANDO AO CHECKPOINT' : 'QUEDA — VOLTANDO AO INÍCIO', 950);
   }
   function flash(text, ms = 1000) {
     ui.messageText.textContent = text; ui.message.classList.remove('hidden');
@@ -91,9 +105,17 @@
       if (!supported) player.grounded = false;
     }
 
-    if (player.y > H + 180) { deaths++; reset(true); }
-    if (!checkpoint.active && player.x > checkpoint.x - 70 && player.grounded) {
-      checkpoint.active = true; flash('CHECKPOINT ATIVADO', 1300); updateHud();
+    if (player.y > H + 180) { deaths++; reset(true); return; }
+    const nextCheckpoint = checkpoints[checkpointIndex + 1];
+    if (nextCheckpoint && player.x > nextCheckpoint.x - 70 && player.grounded) {
+      checkpointIndex++; flash(`CHECKPOINT ${checkpointIndex + 1} ATIVADO`, 1300); updateHud();
+    }
+    const pressHit = presses.some(p => {
+      const cycle = (performance.now() / 1000 + p.phase) % 3;
+      return cycle > 2.28 && player.grounded && player.y > 500 && player.x > p.x1 && player.x < p.x2;
+    });
+    if (pressHit) {
+      deaths++; reset(false); flash('PRENSA ATIVA — RETORNANDO AO CHECKPOINT', 1050); return;
     }
     if (!won && player.x > WORLD_W - 205 && player.grounded) {
       won = true; player.vx = 0; flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 2600);
@@ -132,6 +154,19 @@
     });
     ctx.restore();
   }
+  function drawPressWarnings() {
+    presses.forEach(p => {
+      const x = p.x1 - cameraX, width = p.x2 - p.x1;
+      if (x > W || x + width < 0) return;
+      const cycle = (performance.now() / 1000 + p.phase) % 3;
+      const danger = cycle > 2.28, pulse = .35 + Math.sin(performance.now() * .012) * .18;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = danger ? 'rgba(255,45,0,.62)' : `rgba(255,145,25,${pulse})`;
+      ctx.fillRect(x, 535, width, 13);
+      if (danger) { ctx.fillStyle = 'rgba(255,70,0,.13)'; ctx.fillRect(x, 330, width, 218); }
+      ctx.restore();
+    });
+  }
   function draw() {
     ctx.fillStyle = '#050607'; ctx.fillRect(0, 0, W, H);
     backgrounds.forEach((image, i) => {
@@ -139,6 +174,7 @@
       if (image.complete && x < W && x > -W) ctx.drawImage(image, x, 0, W, H);
     });
     drawAtmosphere();
+    drawPressWarnings();
     if (heroSheet.complete) drawHero();
     const vignette = ctx.createRadialGradient(W / 2, H / 2, 180, W / 2, H / 2, 1050);
     vignette.addColorStop(0, 'rgba(0,0,0,0)'); vignette.addColorStop(1, 'rgba(0,0,0,.25)');
@@ -161,7 +197,7 @@
   bindHold('#left','left'); bindHold('#right','right'); bindHold('#jump','jump');
   document.querySelector('#start').addEventListener('click', () => {
     ui.intro.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
-    reset(); playing = true; flash('ATRAVESSE OS TRÊS SETORES', 1350);
+    reset(); playing = true; flash('ATRAVESSE OS SETE SETORES', 1350);
   });
   document.querySelector('#pause').addEventListener('click', () => { paused = !paused; flash(paused ? 'PAUSADO' : 'CONTINUAR', 700); });
   addEventListener('keydown', e => { if (e.key === 'ArrowLeft') keys.left = true; if (e.key === 'ArrowRight') keys.right = true; if (['ArrowUp',' '].includes(e.key)) keys.jump = true; });
