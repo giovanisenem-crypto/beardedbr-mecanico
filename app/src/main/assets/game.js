@@ -18,14 +18,16 @@
   ];
   const backgrounds = backgroundSources.map(() => new Image());
   const heroSheet = new Image();
+  const pressSprite = new Image();
   let loaded = 0;
   const ready = () => {
-    if (++loaded === backgrounds.length + 1) setTimeout(() => {
+    if (++loaded === backgrounds.length + 2) setTimeout(() => {
       ui.loading.classList.add('hidden'); ui.intro.classList.remove('hidden'); draw();
     }, 650);
   };
   backgrounds.forEach((image, i) => { image.onload = ready; image.src = backgroundSources[i]; });
   heroSheet.onload = ready; heroSheet.src = 'art/mechanic_sheet.webp';
+  pressSprite.onload = ready; pressSprite.src = 'art/hydraulic_press.webp';
 
   // Every collider follows a visible steel surface in one of the seven background panels.
   const platforms = [
@@ -45,6 +47,10 @@
   ];
   const spawn = { x: 165, y: 548 };
   const checkpoints = [{ x: W * 2 + 918, y: 548 }, { x: W * 4 + 1118, y: 548 }];
+  const presses = [
+    { x: W * 5 + 720, phase: 0, wasDown: false },
+    { x: W * 5 + 980, phase: 2.35, wasDown: false }
+  ];
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
   const keys = { left: false, right: false, jump: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
@@ -55,7 +61,36 @@
     x: (i * 617 + 300) % WORLD_W, y: 510 - (i % 4) * 48, phase: i * .7, size: 65 + (i % 4) * 24
   }));
   let playing = false, paused = false, last = 0, deaths = 0, won = false, cameraX = 0, checkpointIndex = -1;
+  let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
   let fpsClock = 0, fpsFrames = 0;
+
+  function pressState(press) {
+    const t = (pressClock + press.phase) % 5;
+    const restY = -180, impactY = 118;
+    let y = restY;
+    if (t >= 3.2 && t < 3.45) {
+      const k = (t - 3.2) / .25; y = restY + (impactY - restY) * k * k * k;
+    } else if (t >= 3.45 && t < 3.8) y = impactY;
+    else if (t >= 3.8) {
+      const k = Math.min(1, (t - 3.8) / 1.2); y = impactY - (impactY - restY) * k;
+    }
+    return { y, bottom: y + 430, warning: t >= 2.2 && t < 3.2, down: t >= 3.45 && t < 3.8 };
+  }
+  function initSiren() {
+    if (audioContext) return;
+    try {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      sirenOscillator = audioContext.createOscillator(); sirenGain = audioContext.createGain();
+      sirenOscillator.type = 'sawtooth'; sirenGain.gain.value = 0;
+      sirenOscillator.connect(sirenGain).connect(audioContext.destination); sirenOscillator.start();
+    } catch (_) { audioContext = null; }
+  }
+  function updateSiren(warning) {
+    if (!audioContext || !sirenGain || !sirenOscillator) return;
+    const now = audioContext.currentTime;
+    sirenGain.gain.setTargetAtTime(warning && !paused ? .035 : 0, now, .045);
+    if (warning) sirenOscillator.frequency.setValueAtTime(610 + Math.sin(pressClock * 9) * 160, now);
+  }
 
   function sector() { return Math.min(7, Math.floor(player.x / W) + 1); }
   function updateHud() {
@@ -87,6 +122,9 @@
   function update(dt) {
     updateParticles(dt);
     if (!playing || paused || won) return;
+    pressClock += dt;
+    shake *= Math.pow(.012, dt);
+    if (shake < .2) shake = 0;
     const accel = player.grounded ? 2750 : 1750;
     const target = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
     if (target) { player.vx += target * accel * dt; player.facing = target; }
@@ -104,10 +142,24 @@
       if (!supported) player.grounded = false;
     }
 
-    if (player.y > H + 180) { deaths++; reset(true); return; }
+    if (player.y > H + 180) { deaths++; updateSiren(false); reset(true); return; }
     const nextCheckpoint = checkpoints[checkpointIndex + 1];
     if (nextCheckpoint && player.x > nextCheckpoint.x - 70 && player.grounded) {
       checkpointIndex++; flash(`CHECKPOINT ${checkpointIndex + 1} ATIVADO`, 1300); updateHud();
+    }
+    let warningAudible = false, crushed = false;
+    presses.forEach(press => {
+      const state = pressState(press);
+      if (state.warning && Math.abs(player.x - press.x) < W * .72) warningAudible = true;
+      if (state.down && !press.wasDown) shake = 20;
+      press.wasDown = state.down;
+      const horizontalHit = Math.abs(player.x - press.x) < 132;
+      const verticalHit = state.bottom > player.y - player.h * .85 && state.bottom < player.y + 35;
+      if (horizontalHit && verticalHit) crushed = true;
+    });
+    updateSiren(warningAudible);
+    if (crushed) {
+      deaths++; updateSiren(false); reset(false); flash('ATINGIDO PELA PRENSA — RETORNANDO AO CHECKPOINT', 1100); return;
     }
     if (!won && player.x > WORLD_W - 205 && player.grounded) {
       won = true; player.vx = 0; flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 2600);
@@ -146,17 +198,36 @@
     });
     ctx.restore();
   }
+  function drawPresses() {
+    if (!pressSprite.complete) return;
+    presses.forEach(press => {
+      const state = pressState(press), x = press.x - cameraX;
+      if (x < -180 || x > W + 180) return;
+      if (state.warning) {
+        const pulse = .45 + Math.sin(pressClock * 18) * .25;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = `rgba(255,55,0,${pulse})`; ctx.fillRect(x - 122, 530, 244, 18);
+        ctx.beginPath(); ctx.arc(x, Math.max(38, state.y + 385), 24 + pulse * 18, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,80,0,${pulse * .7})`; ctx.fill(); ctx.restore();
+      }
+      ctx.drawImage(pressSprite, x - 127, state.y, 254, 430);
+    });
+  }
   function draw() {
     ctx.fillStyle = '#050607'; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    if (shake) ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake * .55);
     backgrounds.forEach((image, i) => {
       const x = i * W - cameraX;
       if (image.complete && x < W && x > -W) ctx.drawImage(image, x, 0, W, H);
     });
     drawAtmosphere();
     if (heroSheet.complete) drawHero();
+    drawPresses();
     const vignette = ctx.createRadialGradient(W / 2, H / 2, 180, W / 2, H / 2, 1050);
     vignette.addColorStop(0, 'rgba(0,0,0,0)'); vignette.addColorStop(1, 'rgba(0,0,0,.25)');
     ctx.fillStyle = vignette; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
   }
   function loop(t) {
     const dt = Math.min(.034, (t - last) / 1000 || 0); last = t;
@@ -174,10 +245,11 @@
   }
   bindHold('#left','left'); bindHold('#right','right'); bindHold('#jump','jump');
   document.querySelector('#start').addEventListener('click', () => {
+    initSiren(); if (audioContext?.state === 'suspended') audioContext.resume();
     ui.intro.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
     reset(); playing = true; flash('ATRAVESSE OS SETE SETORES', 1350);
   });
-  document.querySelector('#pause').addEventListener('click', () => { paused = !paused; flash(paused ? 'PAUSADO' : 'CONTINUAR', 700); });
+  document.querySelector('#pause').addEventListener('click', () => { paused = !paused; if (paused) updateSiren(false); flash(paused ? 'PAUSADO' : 'CONTINUAR', 700); });
   addEventListener('keydown', e => { if (e.key === 'ArrowLeft') keys.left = true; if (e.key === 'ArrowRight') keys.right = true; if (['ArrowUp',' '].includes(e.key)) keys.jump = true; });
   addEventListener('keyup', e => { if (e.key === 'ArrowLeft') keys.left = false; if (e.key === 'ArrowRight') keys.right = false; if (['ArrowUp',' '].includes(e.key)) keys.jump = false; });
   window.ForjaGame = { back() { if (playing) { paused = true; flash('PAUSADO'); return true; } return false; } };
