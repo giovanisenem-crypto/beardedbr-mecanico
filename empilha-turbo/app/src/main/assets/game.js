@@ -267,7 +267,7 @@ var upgrades=[
 function workshop(){
  state.phase="workshop";overlays("workshop");$("bank").textContent="SEU SALDO: "+saved.credits+" CRÉDITOS";$("upgrade-list").textContent="";
  upgrades.forEach(function(u){
-  var level=saved.upgrades[u.id],cost=[80,140,220][level],row=document.createElement("div");row.className="upgrade";
+  var level=saved.upgrades[u.id],cost=[80,140,220][level],row=document.createElement("div");row.className="upgrade upgrade-"+u.id;
   var text=document.createElement("div"),title=document.createElement("b"),detail=document.createElement("small");
   title.textContent=u.name+" · "+level+"/3";detail.textContent=u.desc;text.append(title,detail);
   var button=document.createElement("button");button.textContent=level===3?"MÁXIMO":cost+" CR";button.disabled=level===3||saved.credits<cost;
