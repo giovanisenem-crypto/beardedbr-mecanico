@@ -79,7 +79,7 @@
     if (target) { player.vx += target * accel * dt; player.facing = target; }
     else player.vx *= Math.pow(player.grounded ? .0006 : .07, dt);
     player.vx = Math.max(-455, Math.min(455, player.vx));
-    if (keys.jump && player.grounded) { player.vy = -1050; player.grounded = false; keys.jump = false; }
+    if (keys.jump && player.grounded) { player.vy = -1120; player.grounded = false; keys.jump = false; }
 
     const prevFoot = player.y;
     player.x += player.vx * dt; player.vy += 2100 * dt; player.y += player.vy * dt;
