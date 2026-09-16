@@ -211,6 +211,12 @@ function makeTerrain(){
   g.fillStyle="#0004";g.beginPath();g.ellipse(p[0]+3,p[1]+5,13,10,0,0,Math.PI*2);g.fill();rr(g,p[0]-13,p[1]-10,26,20,3,"#293a3b");g.fillStyle="#f19432";g.beginPath();g.moveTo(p[0],p[1]-18);g.lineTo(p[0]+9,p[1]+6);g.lineTo(p[0]-9,p[1]+6);g.fill();g.fillStyle="#eee7c3";g.fillRect(p[0]-5,p[1]-6,10,4);
  });
  label(g,"EMPILHA TURBO",1050,790,21,"#b9c4a644");label(g,"FÁBRICA BEARDEDBR",244,785,12,"#b9c4a688");
+ // Cenário V1.5: vigas, janelas, ponte rolante, esteiras e máquinas de verdade.
+ for(var wx=90;wx<1240;wx+=185){rr(g,wx,35,112,58,4,"#142c34","#7da9aa");g.fillStyle="#9bd7dc22";g.fillRect(wx+8,43,96,42);g.fillStyle="#d7f4e833";g.fillRect(wx+18,43,6,42);g.fillRect(wx+53,43,6,42);g.fillRect(wx+88,43,6,42);}
+ g.fillStyle="#243f43";g.fillRect(0,105,1280,16);g.fillStyle="#ffbd3d";for(var bx=20;bx<1280;bx+=88){g.fillRect(bx,110,43,5);g.fillStyle="#263635";g.fillRect(bx+43,110,43,5);g.fillStyle="#ffbd3d";}
+ g.strokeStyle="#6a9691";g.lineWidth=10;g.beginPath();g.moveTo(130,118);g.lineTo(130,220);g.moveTo(1150,118);g.lineTo(1150,220);g.stroke();g.strokeStyle="#d99c33";g.lineWidth=7;g.beginPath();g.moveTo(130,135);g.lineTo(1150,135);g.stroke();g.fillStyle="#f0b43b";rr(g,610,126,62,22,3,"#d99327","#ffe29a");label(g,"PONTE ROLANTE",641,137,9,"#172c30");g.strokeStyle="#b9d4cc";g.lineWidth=3;g.beginPath();g.moveTo(641,148);g.lineTo(641,204);g.stroke();g.fillStyle="#e8aa32";g.beginPath();g.arc(641,210,10,0,Math.PI*2);g.fill();
+ [[175,718],[1110,715]].forEach(function(m,i){rr(g,m[0]-43,m[1]-27,86,54,5,"#172e34","#74a9a8");g.fillStyle=i?"#d95038":"#e48628";g.fillRect(m[0]-34,m[1]-18,68,36);g.fillStyle="#98d9d4";g.fillRect(m[0]-23,m[1]-10,25,13);g.fillStyle="#17242b";g.fillRect(m[0]+8,m[1]-10,16,13);for(var q=-27;q<32;q+=18){g.fillStyle="#10191b";g.beginPath();g.arc(m[0]+q,m[1]+23,8,0,Math.PI*2);g.fill();}});
+ for(var cx=325;cx<975;cx+=160){rr(g,cx,385,112,25,3,"#172d30","#7ca39f");for(var rrk=0;rrk<6;rrk++){g.fillStyle=rrk%2?"#547a77":"#233f40";g.fillRect(cx+5+rrk*17,390,15,15);}g.fillStyle="#f0b23c";g.fillRect(cx+10,405,92,3);}
 }
 function render(){
  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle="#172b31";ctx.fillRect(0,0,W,H);
