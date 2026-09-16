@@ -1,0 +1,91 @@
+.menu-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px 18px;
+}
+
+.faction-card {
+  height: min(19vh, 166px);
+}
+
+.game-screen {
+  display: flex;
+  flex-direction: column;
+}
+
+header #sound {
+  margin: 0 8px 0 0;
+  font-size: 16px;
+  color: #ffd16b;
+}
+
+header #sound:not(.sound-on) {
+  color: #705f46;
+  text-decoration: line-through;
+}
+
+.rows {
+  flex: 1;
+  min-height: 96px;
+  gap: 3px;
+}
+
+.row {
+  flex: 1;
+  height: auto;
+  min-height: 29px;
+}
+
+.player-rows .row {
+  transition: 0.18s;
+}
+
+.player-rows .row.target {
+  border: 2px solid #ffd059;
+  background: linear-gradient(90deg, rgba(82, 58, 12, .95), rgba(22, 42, 40, .9));
+  box-shadow: inset 0 0 18px #f5a62355, 0 0 8px #f5a62388;
+  animation: targetPulse 1s infinite;
+}
+
+.action-row {
+  height: 38px;
+}
+
+.action-row button {
+  height: 30px;
+  padding: 0 8px;
+}
+
+.action-row #playCard {
+  min-width: 112px;
+  background: linear-gradient(#ffc13f, #ec8c14);
+  font-size: 8px;
+  box-shadow: 0 0 10px #f5a62366;
+}
+
+.action-row #playCard:disabled {
+  background: #273133;
+  color: #8d8d82;
+  border-color: #576062;
+  box-shadow: none;
+}
+
+.action-row #pass {
+  background: #222d2f;
+  color: #d9c8a5;
+  border-color: #79613c;
+}
+
+@keyframes targetPulse {
+  50% { filter: brightness(1.22); }
+}
+
+@media (max-height: 650px) {
+  .menu-screen { justify-content: flex-start; overflow-y: auto; }
+  .faction-card { height: 132px; }
+  .hand { height: 135px; }
+  .card { height: 125px; }
+  .card-art { height: 72px; }
+  .rarity { top: 65px; }
+}

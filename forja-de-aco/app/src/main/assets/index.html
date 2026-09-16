@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#0b1113"><title>Forja de Aço</title><link rel="stylesheet" href="style.css"></head>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#0b1113"><title>Forja de Aço</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="layout-fix.css"></head>
 <body><main id="app">
 <section id="menu" class="screen menu-screen">
   <div class="brand"><span class="brand-mark">⚙</span><div><h1>FORJA <b>DE AÇO</b></h1><p>CONFLITO INDUSTRIAL</p></div></div>
@@ -16,14 +16,14 @@
 </section>
 
 <section id="game" class="screen game-screen hidden">
-  <div class="game-bg"></div><header><button id="back" aria-label="Voltar">‹</button><b id="factionTitle">METAL RIO</b><span>RODADA <i id="round">1</i>/3</span></header>
+  <div class="game-bg"></div><header><button id="back" aria-label="Voltar">‹</button><b id="factionTitle">METAL RIO</b><button id="sound" class="sound-on" aria-label="Música ligada">♪</button><span>RODADA <i id="round">1</i>/3</span></header>
   <div class="score-panel enemy"><span class="crest" id="enemyCrest">FV</span><div><b id="enemyName">FÁBRICA VULCÃO</b><small>PRODUÇÃO RIVAL</small></div><strong id="enemyScore">0</strong></div>
   <div id="enemyRows" class="rows enemy-rows"></div>
   <div class="belt"><i></i><span>LINHA DE PRODUÇÃO</span><i></i></div>
   <div id="playerRows" class="rows player-rows"></div>
   <div class="score-panel player"><span class="crest" id="playerCrest">MR</span><div><b id="playerName">METAL RIO</b><small>SUA PRODUÇÃO</small></div><strong id="playerScore">0</strong></div>
   <div id="cardInfo" class="card-info"><b>ESCOLHA UMA CARTA</b><span>Toque na carta para ver a habilidade.</span></div>
-  <div class="action-row"><span id="tip">Escolha uma carta.</span><button id="pass">ENCERRAR RODADA</button></div>
+  <div class="action-row"><span id="tip">Escolha uma carta.</span><button id="playCard" disabled>SELECIONE UMA CARTA</button><button id="pass">ENCERRAR</button></div>
   <div id="hand" class="hand"></div>
 </section>
 
