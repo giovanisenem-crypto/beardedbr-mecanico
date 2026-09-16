@@ -13,7 +13,7 @@ var shelves=[
  {x:430,y:50,w:130,h:43},{x:705,y:50,w:130,h:43}
 ];
 var selectedPhase=1;
-function playerPaint(){return !driver?"#f4b337":({giovani:"#f4b337",vitorino:"#ef7c2d",jean:"#4db8d0",andre:"#516b8a",valentina:"#ed6298"}[driver.id]||"#f4b337");}
+function playerPaint(){var p={yellow:"#f4b337",red:"#de4d3a",blue:"#42a7df",green:"#4db878",metal:"#a6aeb5",chrome:"#dbe6ed"}[saved.paint];return p||"#f4b337";}
 var routesStock=[{pick:{x:230,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},{pick:{x:1040,y:690},drop:{x:215,y:150},letter:"B",color:"#70ded4"},{pick:{x:650,y:165},drop:{x:650,y:700},letter:"C",color:"#a8a2ff"},{pick:{x:1020,y:630},drop:{x:260,y:690},letter:"D",color:"#ed9687"}];
 var routes=[
  {pick:{x:270,y:690},drop:{x:1080,y:155},letter:"A",color:"#fbc95a"},
@@ -275,7 +275,7 @@ var upgrades=[
  {id:"forks",name:"GARFOS REFORÇADOS",desc:"A carga sofre menos dano nas batidas."}
 ];
 function workshop(){
- state.phase="workshop";overlays("workshop");$("bank").textContent="SEU SALDO: "+saved.credits+" CRÉDITOS";$("upgrade-list").textContent="";
+ state.phase="workshop";overlays("workshop");$("bank").textContent="SEU SALDO: "+saved.credits+" CRÉDITOS";$("upgrade-list").textContent="";var customs=$("custom-list");customs.textContent="";[{id:"yellow",name:"AMARELO INDUSTRIAL",cost:20},{id:"red",name:"VERMELHO ALERTA",cost:35},{id:"blue",name:"AZUL LOGÍSTICA",cost:35},{id:"green",name:"VERDE OFICINA",cost:35},{id:"metal",name:"METÁLICO GRAFITE",cost:90},{id:"chrome",name:"CROMADO BRD",cost:150}].forEach(function(p){var b=document.createElement("button");b.className="paint-option paint-"+p.id+(saved.paint===p.id?" chosen":"");b.textContent=p.name+" · "+p.cost+" CR";b.onclick=function(){if(saved.paint===p.id||saved.credits<p.cost)return;saved.credits-=p.cost;saved.paint=p.id;persist();workshop();};customs.append(b);});
  upgrades.forEach(function(u){
   var level=saved.upgrades[u.id],cost=[80,140,220][level],row=document.createElement("div");row.className="upgrade upgrade-"+u.id;
   var text=document.createElement("div"),title=document.createElement("b"),detail=document.createElement("small");
