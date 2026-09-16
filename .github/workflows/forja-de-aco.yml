@@ -3,6 +3,8 @@ on:
   push:
     branches: [ "codex/forja-de-aco" ]
     paths: [ "forja-de-aco/**", ".github/workflows/forja-de-aco.yml" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 permissions:
   contents: read
