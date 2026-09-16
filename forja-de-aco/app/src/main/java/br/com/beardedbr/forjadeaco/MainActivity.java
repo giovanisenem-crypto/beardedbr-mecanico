@@ -48,11 +48,12 @@ public class MainActivity extends Activity {
   immersive();
   game.loadUrl("file:///android_asset/index.html");
  }
- private void playRandomNative(){
+ private void playRandomNative(){playTrackNative(-1);}
+ private void playTrackNative(int requested){
   if(audioManager!=null)audioManager.requestAudioFocus(focusListener,AudioManager.STREAM_MUSIC,AudioManager.AUDIOFOCUS_GAIN);
   releaseMusic();
-  int next=lastTrack;
-  while(next==lastTrack&&tracks.length>1)next=(int)(Math.random()*tracks.length);
+  int next=requested;
+  if(next<0||next>=tracks.length){next=lastTrack;while(next==lastTrack&&tracks.length>1)next=(int)(Math.random()*tracks.length);}
   lastTrack=next;
   music=MediaPlayer.create(this,tracks[next]);
   if(music!=null){music.setLooping(true);music.setVolume(.68f,.68f);if(musicEnabled)music.start();}
@@ -64,6 +65,7 @@ public class MainActivity extends Activity {
  }
  public class AudioBridge {
   @JavascriptInterface public void playRandom(){runOnUiThread(()->playRandomNative());}
+  @JavascriptInterface public void playTrack(int index){runOnUiThread(()->playTrackNative(index));}
   @JavascriptInterface public boolean toggle(){musicEnabled=!musicEnabled;runOnUiThread(()->{if(musicEnabled){if(music==null)playRandomNative();else music.start();}else if(music!=null)music.pause();});return musicEnabled;}
   @JavascriptInterface public void stop(){runOnUiThread(()->releaseMusic());}
   @JavascriptInterface public boolean isOn(){return musicEnabled;}

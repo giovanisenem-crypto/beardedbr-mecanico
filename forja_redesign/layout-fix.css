@@ -166,7 +166,7 @@ header #sound:not(.sound-on) {
 .career-bar span { padding:5px 3px;border:1px solid #725535;background:#091416dc;color:#bba980;font:bold 6px Arial;text-align:center;letter-spacing:.5px; }
 .career-bar b { color:#ffd066;font-size:9px;margin-left:3px; }
 
-.menu-tools { display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:5px;margin-top:7px; }
+.menu-tools { display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px; }
 .menu-tools button,.menu-tools label { height:34px;display:flex;align-items:center;justify-content:center;margin:0;border:1px solid #8f693b;background:#101d20e8;color:#f3d28c;font:bold 7px Arial;letter-spacing:.4px; }
 .menu-tools select { max-width:86px;margin-left:4px;border:0;background:#223438;color:#fff1c7;font:bold 7px Arial;outline:none; }
 
@@ -391,6 +391,13 @@ header,.score-panel,.rows,.belt,.card-info,.history-bar,.action-row,.hand { z-in
 .deck-actions { position:sticky;bottom:-12px;display:flex;gap:7px;margin:10px -2px 0;padding:8px 2px 3px;background:#071012f4; }
 .deck-actions button { flex:1;height:39px;border:1px solid #c88d36;background:#1b292b;color:#efd39b;font:bold 9px Arial; }
 .deck-actions button:last-child { background:linear-gradient(#ffbc3d,#df8018);color:#211306; }
+.shop-panel { position:relative;width:min(94vw,480px);max-height:94dvh;padding:18px 13px 14px;overflow:auto;border:3px solid #ffc35a;border-radius:10px;background:radial-gradient(circle at 50% 0,#244044,#071012 62%);box-shadow:0 0 34px #ff9b275e,0 18px 38px #000;text-align:center; }
+.shop-panel>small { color:#efbd61;font:900 8px Arial;letter-spacing:2px; }.shop-panel h2 { margin:4px 0 9px;color:#fff0c5;font-size:20px; }.shop-panel h3 { margin:13px 0 6px;color:#f5cf81;font:bold 9px Arial;letter-spacing:1.5px;text-align:left; }.shop-panel>span { display:block;margin-top:11px;color:#98aaa6;font-size:8px;line-height:11px; }
+.shop-wallet { padding:8px;border:1px solid #8c693d;background:#091617;color:#c6b690;font:bold 8px Arial;letter-spacing:1px; }.shop-wallet b { margin-left:8px;color:#ffd163;font-size:14px; }.shop-wallet.poor { border-color:#ff5268;animation:targetPulse .45s 2; }
+.shop-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px; }
+.shop-item { position:relative;min-height:83px;padding:10px 8px 7px;border:2px solid #526164;border-radius:7px;background:linear-gradient(145deg,#162729,#080e0f);color:#e9dec6;text-align:left;box-shadow:inset 0 0 13px #000; }
+.shop-item.owned { border-color:var(--item-color,#f0b84f);box-shadow:0 0 10px color-mix(in srgb,var(--item-color,#f0b84f) 55%,transparent),inset 0 0 13px #000; }.shop-item.selected { background:linear-gradient(145deg,color-mix(in srgb,var(--item-color,#f0b84f) 28%,#102022),#071012); }
+.shop-swatch { display:block;height:6px;margin-bottom:8px;border-radius:8px;background:linear-gradient(90deg,var(--item-color),#fff,var(--item-color));box-shadow:0 0 10px var(--item-color); }.shop-note { display:block;color:#94a4a1;font-size:7px;line-height:9px; }.shop-item b { display:block;margin:4px 0;color:#fff0c7;font-size:9px;line-height:11px; }.shop-item em { display:block;margin-top:7px;color:#ffc85f;font:bold 8px Arial;font-style:normal; }.shop-item.selected em { color:#79efd9; }
 .tutorial-panel { position:relative;width:min(88vw,390px);padding:24px 20px 18px;border:3px solid #ffc45d;border-radius:10px;background:radial-gradient(circle at top,#244044,#081012 68%);box-shadow:0 0 34px #f5a62377,0 18px 36px #000;text-align:center; }
 .tutorial-panel small { display:block;color:#efbd61;font:900 8px Arial;letter-spacing:2px; }.tutorial-panel i { display:block;margin:5px 0 14px;color:#7eeadd;font:normal 8px Arial; }.tutorial-panel>b { display:block;color:#fff0c3;font-size:18px; }.tutorial-panel p { min-height:78px;margin:10px 0 16px;color:#ded6c2;font-size:11px;line-height:16px; }.tutorial-actions { display:flex;gap:8px; }.tutorial-actions button { flex:1;height:38px;border:1px solid #d69c43;background:#17272a;color:#e9d4a7;font:bold 9px Arial; }.tutorial-actions button:last-child { background:linear-gradient(#ffbd3d,#de8018);color:#211306; }
 .result-reward { display:block;width:max-content;margin:12px auto 0;padding:8px 14px;border:1px solid #ffc65c;border-radius:4px;background:#162a27;color:#7de8d0;font-size:14px;box-shadow:0 0 15px #43d9bd55; }
