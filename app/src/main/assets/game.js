@@ -8,7 +8,7 @@
   const ui = {
     loading: document.querySelector('#loading'), intro: document.querySelector('#intro'),
     hud: document.querySelector('#hud'), controls: document.querySelector('#controls'),
-    status: document.querySelector('#status'), fps: document.querySelector('#fps'),
+    status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), fps: document.querySelector('#fps'),
     sound: document.querySelector('#sound'), message: document.querySelector('#message'),
     messageText: document.querySelector('#message div')
   };
@@ -127,7 +127,8 @@
   function sector() { return Math.min(7, Math.floor(player.x / W) + 1); }
   function updateHud() {
     const names = ['PISO DE FUNDIÇÃO', 'PASSARELAS', 'LAMINAÇÃO', 'TORRE VERTICAL', 'LINHA DE FUNDIÇÃO', 'SALÃO DE PRENSAS', 'PORTÃO DA FORJA'];
-    ui.status.textContent = `SETOR 0${sector()} · ${names[sector() - 1]} · SUCATA ${defeats}/${enemies.length} · QUEDAS ${deaths}`;
+    ui.status.textContent = `SETOR 0${sector()} · ${names[sector() - 1]} · QUEDAS ${deaths}`;
+    ui.scrap.textContent = `SUCATA ${defeats}/${enemies.length}`;
   }
   function reset(showText = false) {
     const safe = checkpointIndex >= 0 ? checkpoints[checkpointIndex] : spawn;
@@ -224,7 +225,8 @@
     }
     if (!won && player.x > WORLD_W - 205 && player.grounded) {
       won = true; player.vx = 0; flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 2600);
-      ui.status.textContent = `FASE 1 CONCLUÍDA · SUCATA ${defeats}/${enemies.length} · QUEDAS ${deaths}`;
+      ui.status.textContent = `FASE 1 CONCLUÍDA · QUEDAS ${deaths}`;
+      ui.scrap.textContent = `SUCATA ${defeats}/${enemies.length}`;
     }
 
     const desiredCamera = Math.max(0, Math.min(WORLD_W - W, player.x - W * .34));
