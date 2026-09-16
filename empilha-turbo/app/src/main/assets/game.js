@@ -40,7 +40,7 @@ function showToast(text,duration){$("toast").textContent=text;$("toast").classLi
 function overlays(which){["menu","paused","result","workshop"].forEach(function(id){$(id).hidden=id!==which;});}
 function menuInfo(){
  var pick=$("driver-pick");if(!pick){pick=document.createElement("div");pick.id="driver-pick";document.querySelector("#menu .menu-card").insertBefore(pick,$("start"));}pick.innerHTML=drivers.map(function(d){return '<button class="driver-card '+(driver&&driver.id===d.id?"chosen":"")+'" data-driver="'+d.id+'"><b>'+d.name+'</b><small>'+d.role+' · '+d.skill+'</small></button>';}).join("");Array.prototype.forEach.call(pick.querySelectorAll("button"),function(b){b.onclick=function(){driver=drivers.filter(function(d){return d.id===b.dataset.driver;})[0];menuInfo();};});
- var phases=$("phase-pick");if(!phases){phases=document.createElement("div");phases.id="phase-pick";document.querySelector("#menu .menu-card").insertBefore(phases,$("start"));}phases.innerHTML='<button class="phase-card '+(selectedPhase===1?"chosen":"")+'" data-phase="1"><b>01 · RECEBIMENTO</b><small>3 entregas</small></button><button class="phase-card '+(selectedPhase===2?"chosen":"")+'" data-phase="2"><b>02 · ESTOQUE</b><small>4 pallets por cor</small></button>';Array.prototype.forEach.call(phases.querySelectorAll("button"),function(b){b.onclick=function(){selectedPhase=+b.dataset.phase;menuInfo();};});
+ var phases=$("phase-pick");if(!phases){phases=document.createElement("div");phases.id="phase-pick";document.querySelector("#menu .menu-card").insertBefore(phases,$("start"));}phases.innerHTML='<button class="phase-card '+(selectedPhase===1?"chosen":"")+'" data-phase="1"><b>01 · RECEBIMENTO</b><small>3 entregas</small></button><button class="phase-card '+(selectedPhase===2?"chosen":"")+'" data-phase="2"><b>02 · ESTOQUE</b><small>4 pallets por cor</small></button>';Array.prototype.forEach.call(phases.querySelectorAll("button"),function(b){b.onclick=function(){selectedPhase=+b.dataset.phase;makeTerrain();menuInfo();};});
  $("credits-menu").textContent=saved.credits+" CR";
  $("best").textContent=saved.best?"RECORDE: "+saved.best+" PTS"+(saved.bestTime?" · "+formatTime(saved.bestTime):""):"Seu primeiro turno começa aqui.";
  $("sound").textContent=saved.sound?"SOM LIGADO":"SOM DESLIGADO";$("sound").setAttribute("aria-pressed",String(saved.sound));
@@ -184,11 +184,11 @@ function makeTerrain(){
  for(var i=0;i<1500;i++){g.fillStyle=i%2?"#c6d0b20b":"#091a1814";g.fillRect(rand()*WORLD.w,rand()*WORLD.h,1+rand()*9,1+rand()*2);}
  g.strokeStyle="#cbbb7660";g.lineWidth=3;g.setLineDash([25,20]);[365,467].forEach(function(y){g.beginPath();g.moveTo(155,y);g.lineTo(1125,y);g.stroke();});g.setLineDash([]);
  [270,990].forEach(function(x){for(var i=0;i<5;i++){g.fillStyle="#e7d29849";g.fillRect(x-32+i*14,363,8,107);}});
- label(g,"CORREDOR DE CIRCULAÇÃO",650,415,13,"#d1ce9980");
+ label(g,selectedPhase===2?"ESTOQUE · DOCAS POR COR":"CORREDOR DE CIRCULAÇÃO",650,415,13,"#d1ce9980");if(selectedPhase===2){g.fillStyle="#f4ba3b35";for(var sy=120;sy<760;sy+=120)g.fillRect(170,sy,940,8);}
  g.fillStyle="#1a3338";g.fillRect(0,0,1280,23);g.fillRect(0,817,1280,23);g.fillRect(0,0,23,840);g.fillRect(1257,0,23,840);
  g.fillStyle="#90a8a0";g.fillRect(22,22,1236,3);g.fillRect(22,814,1236,3);
  for(var j=40;j<1250;j+=50){g.fillStyle="#bfab5d";g.fillRect(j,8,23,5);g.fillRect(j,829,23,5);}
- routes.forEach(function(r,i){
+ activeRoutes().forEach(function(r,i){
   var d=r.drop;rr(g,d.x-76,d.y-59,152,118,7,"#122d343f",r.color+"b0");
   g.fillStyle=r.color+"45";g.fillRect(d.x-69,d.y-50,138,5);g.fillRect(d.x-69,d.y+46,138,5);
   label(g,"DOCA "+r.letter,d.x,d.y-27,16,r.color);label(g,"ENTREGAS",d.x,d.y+4,10,r.color+"aa");
