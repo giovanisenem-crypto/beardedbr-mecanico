@@ -61,13 +61,13 @@ function goMenu(){state.phase="menu";stopInputs();overlays("menu");$("hud").hidd
 function finish(won){
  if(state.phase!=="playing")return;
  state.phase="result";stopInputs();
- var score=C.score(state.deliveries,state.integritySum,state.time,won),credit=C.credits(state.deliveries,state.integritySum,won),record=score>saved.best;
+ var score=C.score(state.deliveries,state.integritySum,state.time,won),credit=C.credits(state.deliveries,state.integritySum,won)+(won?(phaseData().reward||0):0),record=score>saved.best;
  saved.credits+=credit;saved.best=Math.max(saved.best,score);
  if(won&&(saved.bestTime===null||state.elapsed<saved.bestTime))saved.bestTime=state.elapsed;
  persist();state.score=score;
  $("result-eyebrow").textContent=record?"NOVO RECORDE DA OFICINA":"FIM DO TURNO";
- $("result-title").textContent=won?"TURNO CONCLUÍDO!":"O APITO TOCOU!";
- $("result-joke").textContent=won?"O chefe disse que foi sorte. O pallet discorda.":"A empilhadeira estava pronta. O relógio é que correu demais.";
+ $("result-title").textContent=won?(selectedPhase===2?"ESTOQUE ORGANIZADO!":"TURNO CONCLUÍDO!"):"O APITO TOCOU!";
+ $("result-joke").textContent=won?(selectedPhase===2?"Quatro cargas certas. O estoque agradece.":"O chefe disse que foi sorte. O pallet discorda."):"A empilhadeira estava pronta. O relógio é que correu demais.";
  $("result-score").textContent=score;$("result-credits").textContent="+"+credit+" CR";
  $("result-detail").textContent=state.deliveries+" de "+phaseData().deliveries+" entregas · Integridade média: "+(state.deliveries?Math.round(state.integritySum/state.deliveries):0)+"%";
  $("controls").hidden=true;overlays("result");won?deliverySound():tone(135,.4,"triangle",.055);
