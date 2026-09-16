@@ -20,7 +20,7 @@
       <div class="panel">
         <div class="eyebrow">FASE 1 · PRIMEIRA FUNDIÇÃO</div>
         <h1>Rota da Forja</h1>
-        <p>Atravesse sete setores, domine as passarelas, salte sobre os sentinelas e alcance o portão industrial.</p>
+        <p>Atravesse sete setores, colete as engrenagens, salte sobre os sentinelas e alcance o portão industrial.</p>
         <button id="start">INICIAR FASE</button>
       </div>
     </section>
@@ -29,6 +29,7 @@
       <div class="title">FORJA DE AÇO</div>
       <div id="status">SETOR 01 · PISO DE FUNDIÇÃO</div>
       <div id="scrap">SUCATA 0/5</div>
+      <div id="score">PONTOS 0000</div>
       <div id="fps">60 FPS</div>
       <button id="sound" aria-label="Ligar ou desligar som">♪</button>
       <button id="pause" aria-label="Pausar">Ⅱ</button>
@@ -43,6 +44,15 @@
     </div>
 
     <section id="message" class="hidden"><div></div></section>
+
+    <section id="result" class="hidden">
+      <div class="result-panel">
+        <div class="eyebrow">PORTÃO DA FORJA ALCANÇADO</div>
+        <h2>FASE 1 CONCLUÍDA</h2>
+        <div id="result-stats"></div>
+        <button id="replay">JOGAR NOVAMENTE</button>
+      </div>
+    </section>
   </main>
   <script src="game.js"></script>
 </body>

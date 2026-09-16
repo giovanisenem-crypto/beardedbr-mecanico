@@ -8,9 +8,10 @@
   const ui = {
     loading: document.querySelector('#loading'), intro: document.querySelector('#intro'),
     hud: document.querySelector('#hud'), controls: document.querySelector('#controls'),
-    status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), fps: document.querySelector('#fps'),
+    status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), score: document.querySelector('#score'), fps: document.querySelector('#fps'),
     sound: document.querySelector('#sound'), message: document.querySelector('#message'),
-    messageText: document.querySelector('#message div')
+    messageText: document.querySelector('#message div'), result: document.querySelector('#result'),
+    resultStats: document.querySelector('#result-stats')
   };
   const backgroundSources = [
     'art/forge_stage.webp', 'art/forge_stage_02.webp', 'art/forge_stage_03.webp',
@@ -58,6 +59,16 @@
     { x: W * 4 + 1070, min: W * 4 + 970, max: W * 4 + 1170, y: 548, dir: -1, alive: true },
     { x: W * 6 + 760, min: W * 6 + 625, max: W * 6 + 905, y: 548, dir: 1, alive: true }
   ];
+  enemies.forEach(enemy => { enemy.startX = enemy.x; enemy.startDir = enemy.dir; });
+  const collectibles = [
+    { x: 240, y: 468 }, { x: 835, y: 468 }, { x: 1375, y: 468 },
+    { x: W + 630, y: 201 }, { x: W + 1160, y: 201 }, { x: W + 1400, y: 468 },
+    { x: W * 2 + 830, y: 468 }, { x: W * 2 + 1430, y: 468 },
+    { x: W * 3 + 700, y: 337 }, { x: W * 3 + 900, y: 190 }, { x: W * 3 + 1080, y: 338 }, { x: W * 3 + 1400, y: 468 },
+    { x: W * 4 + 700, y: 255 }, { x: W * 4 + 1200, y: 214 }, { x: W * 4 + 1480, y: 468 },
+    { x: W * 5 + 1320, y: 243 },
+    { x: W * 6 + 730, y: 468 }, { x: W * 6 + 960, y: 243 }, { x: W * 6 + 1210, y: 468 }
+  ].map(item => ({ ...item, picked: false }));
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
   const keys = { left: false, right: false, jump: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
@@ -68,7 +79,7 @@
     x: (i * 617 + 300) % WORLD_W, y: 510 - (i % 4) * 48, phase: i * .7, size: 65 + (i % 4) * 24
   }));
   const bursts = [];
-  let playing = false, paused = false, last = 0, deaths = 0, defeats = 0, won = false, cameraX = 0, checkpointIndex = -1;
+  let playing = false, paused = false, last = 0, deaths = 0, defeats = 0, collected = 0, points = 0, won = false, cameraX = 0, checkpointIndex = -1;
   let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
   let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
   let fpsClock = 0, fpsFrames = 0;
@@ -129,6 +140,7 @@
     const names = ['PISO DE FUNDIÇÃO', 'PASSARELAS', 'LAMINAÇÃO', 'TORRE VERTICAL', 'LINHA DE FUNDIÇÃO', 'SALÃO DE PRENSAS', 'PORTÃO DA FORJA'];
     ui.status.textContent = `SETOR 0${sector()} · ${names[sector() - 1]} · QUEDAS ${deaths}`;
     ui.scrap.textContent = `SUCATA ${defeats}/${enemies.length}`;
+    ui.score.textContent = `PONTOS ${String(points).padStart(4, '0')}`;
   }
   function reset(showText = false) {
     const safe = checkpointIndex >= 0 ? checkpoints[checkpointIndex] : spawn;
@@ -185,6 +197,16 @@
       if (!supported) player.grounded = false;
     }
 
+    collectibles.forEach(item => {
+      if (item.picked) return;
+      const insideX = Math.abs(player.x - item.x) < 58;
+      const insideY = item.y > player.y - player.h * .9 - 20 && item.y < player.y + 22;
+      if (insideX && insideY) {
+        item.picked = true; collected++; points += 100; burstAt(item.x, item.y);
+        tone(740 + (collected % 4) * 90, .13, 'triangle', .045); updateHud();
+      }
+    });
+
     let sentinelHit = false;
     enemies.forEach(enemy => {
       if (!enemy.alive) return;
@@ -195,7 +217,7 @@
       const pLeft = player.x - player.w * .3, pRight = player.x + player.w * .3, pTop = player.y - player.h * .86;
       if (pRight > eLeft && pLeft < eRight && player.y > eTop + 10 && pTop < enemy.y - 8) {
         if (player.vy > 120 && prevFoot <= eTop + 28) {
-          enemy.alive = false; defeats++; player.y = eTop; player.vy = -690; player.grounded = false;
+          enemy.alive = false; defeats++; points += 250; player.y = eTop; player.vy = -690; player.grounded = false;
           burstAt(enemy.x, eTop + 48); shake = 8; flash('SENTINELA DESTRUÍDO', 700); updateHud();
         } else sentinelHit = true;
       }
@@ -226,9 +248,16 @@
       deaths++; updateSiren(false); reset(false); flash('ATINGIDO PELA PRENSA — RETORNANDO AO CHECKPOINT', 1100); return;
     }
     if (!won && player.x > WORLD_W - 205 && player.grounded) {
-      won = true; player.vx = 0; flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 2600);
+      won = true; player.vx = 0; points += Math.max(0, 1000 - deaths * 100); updateSiren(false); setAudioLevel();
+      flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 900);
       ui.status.textContent = `FASE 1 CONCLUÍDA · QUEDAS ${deaths}`;
       ui.scrap.textContent = `SUCATA ${defeats}/${enemies.length}`;
+      ui.score.textContent = `PONTOS ${String(points).padStart(4, '0')}`;
+      setTimeout(() => {
+        ui.controls.classList.add('hidden');
+        ui.resultStats.textContent = `PONTOS  ${points}\nENGRENAGENS  ${collected}/${collectibles.length}\nSUCATA  ${defeats}/${enemies.length}\nQUEDAS  ${deaths}`;
+        ui.result.classList.remove('hidden');
+      }, 900);
     }
 
     const desiredCamera = Math.max(0, Math.min(WORLD_W - W, player.x - W * .34));
@@ -266,6 +295,37 @@
       ctx.fillStyle = '#ffb238'; ctx.fillRect(x, b.y, b.size, b.size * 2.4);
     });
     ctx.restore();
+  }
+  function drawObjectives() {
+    const now = performance.now();
+    checkpoints.forEach((checkpoint, i) => {
+      const x = checkpoint.x - cameraX; if (x < -100 || x > W + 100) return;
+      const active = i <= checkpointIndex, pulse = .55 + Math.sin(now * .006 + i) * .18;
+      ctx.save();
+      ctx.fillStyle = '#171b1d'; ctx.fillRect(x - 9, checkpoint.y - 112, 18, 112);
+      ctx.strokeStyle = active ? '#7dff9a' : '#ff8a2d'; ctx.lineWidth = 4; ctx.strokeRect(x - 16, checkpoint.y - 126, 32, 28);
+      ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = active ? `rgba(70,255,130,${pulse})` : `rgba(255,112,25,${pulse})`;
+      ctx.beginPath(); ctx.arc(x, checkpoint.y - 112, 13, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#f4e7d2'; ctx.font = '900 16px Arial'; ctx.textAlign = 'center'; ctx.fillText(`CP${i + 1}`, x, checkpoint.y - 136);
+    });
+    collectibles.forEach((item, i) => {
+      if (item.picked) return;
+      const x = item.x - cameraX; if (x < -70 || x > W + 70) return;
+      const bob = Math.sin(now * .004 + i) * 7;
+      ctx.save(); ctx.translate(x, item.y + bob); ctx.rotate(now * .0022 + i);
+      ctx.shadowColor = '#ff8a19'; ctx.shadowBlur = 24;
+      const metal = ctx.createRadialGradient(-8, -10, 3, 0, 0, 31);
+      metal.addColorStop(0, '#fff1b0'); metal.addColorStop(.22, '#ffb52f'); metal.addColorStop(.58, '#9a4b06'); metal.addColorStop(1, '#2c1a10');
+      ctx.fillStyle = metal; ctx.beginPath();
+      for (let n = 0; n < 24; n++) {
+        const radius = n % 3 === 0 ? 31 : 24, angle = n / 24 * Math.PI * 2;
+        const px = Math.cos(angle) * radius, py = Math.sin(angle) * radius;
+        if (n === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#16191b'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#ffe39b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    });
   }
   function drawEnemies() {
     if (!sentinelSprite.complete) return;
@@ -315,6 +375,7 @@
       if (image.complete && x < W && x > -W) ctx.drawImage(image, x, 0, W, H);
     });
     drawAtmosphere();
+    drawObjectives();
     drawEnemies();
     if (heroSheet.complete) drawHero();
     drawPresses();
@@ -337,12 +398,22 @@
     ['pointerdown','touchstart'].forEach(n => el.addEventListener(n, on, { passive: false }));
     ['pointerup','pointercancel','pointerleave','touchend','touchcancel'].forEach(n => el.addEventListener(n, off, { passive: false }));
   }
+  function startNewRun() {
+    deaths = 0; defeats = 0; collected = 0; points = 0; checkpointIndex = -1; pressClock = 0;
+    enemies.forEach(enemy => { enemy.x = enemy.startX; enemy.dir = enemy.startDir; enemy.alive = true; });
+    collectibles.forEach(item => { item.picked = false; });
+    presses.forEach(press => { press.wasDown = false; });
+    ui.result.classList.add('hidden'); ui.controls.classList.remove('hidden');
+    paused = false; playing = true; reset(); setAudioLevel();
+    flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
+  }
   bindHold('#left','left'); bindHold('#right','right'); bindHold('#jump','jump');
   document.querySelector('#start').addEventListener('click', () => {
     initSiren(); if (audioContext?.state === 'suspended') audioContext.resume();
     ui.intro.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
-    reset(); playing = true; flash('ATRAVESSE OS SETE SETORES', 1350);
+    startNewRun();
   });
+  document.querySelector('#replay').addEventListener('click', startNewRun);
   document.querySelector('#sound').addEventListener('click', () => {
     soundEnabled = !soundEnabled; ui.sound.textContent = soundEnabled ? '♪' : '×';
     setAudioLevel(); if (!soundEnabled) updateSiren(false);
