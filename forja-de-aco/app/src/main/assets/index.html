@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#0b1113"><title>Forja de Aço</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="layout-fix.css"></head>
-<body><main id="app"><audio id="music" src="audio/forja_industrial.ogg" preload="auto" loop></audio>
+<body><main id="app"><audio id="music" preload="auto" loop></audio><span id="fps" class="fps-counter">-- FPS</span>
 <section id="menu" class="screen menu-screen">
   <div class="brand"><span class="brand-mark">⚙</span><div><h1>FORJA <b>DE AÇO</b></h1><p>CONFLITO INDUSTRIAL</p></div></div>
   <div class="menu-heading"><b>ESCOLHA SUA FACÇÃO</b><span>Cada baralho possui uma estratégia e um líder.</span></div>
@@ -13,6 +13,7 @@
   <div id="deckDetail" class="deck-detail"><span class="leader-icon">⚙</span><div><b>METAL RIO</b><small>+2 para uma máquina CNC por rodada.</small></div></div>
   <button id="play" class="primary">INICIAR PARTIDA <span>›</span></button>
   <small class="offline">OFFLINE CONTRA I.A. • BARALHO DE TESTE</small>
+  <div class="bearded-brand"><b>BEARDEDBR</b><span>PRODUÇÕES</span><small>JOGOS FEITOS NA FORJA</small></div>
 </section>
 
 <section id="game" class="screen game-screen hidden">
@@ -28,4 +29,5 @@
 </section>
 
 <section id="result" class="screen result-screen hidden"><div class="resultbox"><span class="result-gear">⚙</span><small>FIM DO CONTRATO</small><h2 id="resultTitle">VITÓRIA!</h2><p id="resultText"></p><button id="again" class="primary">NOVA PARTIDA</button></div></section>
+<section id="victoryFx" class="victory-fx hidden"><div class="victory-cards"><i></i><i></i><i></i></div><div class="victory-emblem"><img src="art/victory_emblem.png" alt=""><small>CONTRATO CONQUISTADO</small><b>VITÓRIA!</b><span>BEARDEDBR PRODUÇÕES</span></div><div class="victory-sparks"><i></i><i></i><i></i><i></i><i></i><i></i></div></section>
 </main><script src="game.js"></script></body></html>
