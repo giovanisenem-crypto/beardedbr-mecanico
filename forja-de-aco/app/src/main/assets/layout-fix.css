@@ -114,9 +114,10 @@ header #sound:not(.sound-on) {
 }
 
 .hand > .card .card-copy em {
-  font-size: 8px;
-  line-height: 9px;
-  height: 28px;
+  font-size: 9.2px;
+  line-height: 10.5px;
+  height: 32px;
+  font-weight: 600;
 }
 
 .hand > .card .power {
@@ -283,15 +284,17 @@ header #sound:not(.sound-on) {
 .effect-toast.show { animation: effectToast 1.5s ease both; }
 @keyframes effectToast { 12%,72% { opacity:1; transform:translate(-50%,0) scale(1); } 100% { opacity:0; transform:translate(-50%,-12px) scale(.96); } }
 
-/* Quatro molduras industriais sorteadas a cada partida. */
-.table-frame { position:absolute; z-index:2; inset:2px; border:4px solid var(--table-a,#b86b24); border-radius:7px; box-shadow:inset 0 0 0 2px #080b0c,inset 0 0 20px var(--table-glow,#ff8b1f66),0 0 12px var(--table-glow,#ff8b1f66); pointer-events:none; }
-.table-frame:before,.table-frame:after { content:""; position:absolute; left:12px; right:12px; height:6px; border:1px solid var(--table-b,#ffd36a); background:repeating-linear-gradient(90deg,var(--table-a) 0 18px,#101719 18px 27px); box-shadow:0 0 8px var(--table-glow); }
-.table-frame:before { top:38px; }.table-frame:after { bottom:3px; }
-.table-frame span { position:absolute; z-index:4; top:38px; left:50%; transform:translate(-50%,-50%); padding:2px 9px; white-space:nowrap; border:1px solid var(--table-b); background:#091113; color:var(--table-b); font:900 6px/9px Arial; letter-spacing:1.5px; }
+/* Molduras vetoriais 3D: metal chanfrado, rebites e componentes próprios. */
+.table-frame { position:absolute; z-index:2; inset:0; pointer-events:none; background-position:center; background-size:100% 100%; background-repeat:no-repeat; filter:drop-shadow(0 0 8px var(--table-glow,#ff8b1f88)); }
+.table-frame span { position:absolute; z-index:4; top:40px; left:50%; transform:translate(-50%,-50%); padding:3px 10px; white-space:nowrap; border:1px solid var(--table-b); border-radius:8px; background:linear-gradient(#172326,#050a0c); box-shadow:inset 0 1px #ffffff30,0 3px 7px #000,0 0 9px var(--table-glow); color:var(--table-b); font:900 6px/9px Arial; letter-spacing:1.5px; }
 .game-screen.frame-fornalha { --table-a:#b76019;--table-b:#ffd067;--table-glow:#ff721f7d; }
 .game-screen.frame-cobalto { --table-a:#078fa8;--table-b:#79f4ff;--table-glow:#00d9ff80; }
 .game-screen.frame-hidraulica { --table-a:#b41f32;--table-b:#ff8b71;--table-glow:#ff254d80; }
 .game-screen.frame-reator { --table-a:#7e32c8;--table-b:#f1a3ff;--table-glow:#c83cff80; }
+.game-screen.frame-fornalha .table-frame { background-image:url('art/frame_bronze.svg'); }
+.game-screen.frame-cobalto .table-frame { background-image:url('art/frame_cobalto.svg'); }
+.game-screen.frame-hidraulica .table-frame { background-image:url('art/frame_hydraulic.svg'); }
+.game-screen.frame-reator .table-frame { background-image:url('art/frame_reactor.svg'); }
 .game-screen.frame-cobalto .game-bg { filter:saturate(.88) hue-rotate(10deg); }
 .game-screen.frame-hidraulica .game-bg { filter:saturate(1.05) sepia(.12); }
 .game-screen.frame-reator .game-bg { filter:saturate(.95) hue-rotate(300deg); }
