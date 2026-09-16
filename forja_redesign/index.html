@@ -17,8 +17,13 @@
     <button class="faction-card" data-deck="elite"><span class="faction-bg"></span><span class="faction-flag">ME</span><span class="faction-copy"><b>MANUTENÇÃO ELITE</b><small>REPAROS • CONTROLE</small><em>Técnica Elite</em></span></button>
   </div>
   <div id="deckDetail" class="deck-detail"><span class="leader-icon">⚙</span><div><b>METAL RIO</b><small>+2 para uma máquina CNC por rodada.</small></div></div>
+  <div class="menu-tools">
+    <button id="deckGallery">▦ VER BARALHO</button>
+    <label>IA <select id="difficulty"><option value="easy">APRENDIZ</option><option value="normal" selected>NORMAL</option><option value="expert">ESPECIALISTA</option></select></label>
+    <button id="howTo">? COMO JOGAR</button>
+  </div>
   <button id="play" class="primary">INICIAR PARTIDA <span>›</span></button>
-  <small class="offline">OFFLINE CONTRA I.A. • BARALHO DE TESTE</small>
+  <small id="offlineMode" class="offline">OFFLINE CONTRA I.A. • NORMAL</small>
   <div class="bearded-brand"><b>BEARDEDBR</b><span>PRODUÇÕES</span><small>JOGOS FEITOS NA FORJA</small></div>
 </section>
 
@@ -37,6 +42,8 @@
 
 <section id="cardInspect" class="inspect-overlay hidden" aria-modal="true"><div class="inspect-panel"><button id="closeInspect" class="inspect-close" aria-label="Fechar">×</button><small id="inspectOwner">SUA CARTA</small><div id="inspectCardHost"></div><div class="inspect-details"><b>HABILIDADE</b><p id="inspectAbility"></p><b>ÚLTIMA AÇÃO</b><p id="inspectEffect"></p></div><span>Toque fora para fechar</span></div></section>
 <section id="historyModal" class="inspect-overlay hidden" aria-modal="true"><div class="history-panel"><button id="closeHistory" class="inspect-close" aria-label="Fechar">×</button><small>REGISTRO DA PARTIDA</small><h2>AÇÕES DAS CARTAS</h2><div id="historyList" class="history-list"></div><span>As ações mais recentes aparecem primeiro.</span></div></section>
+<section id="deckModal" class="inspect-overlay hidden" aria-modal="true"><div class="deck-panel"><button id="closeDeck" class="inspect-close" aria-label="Fechar">×</button><small>COLEÇÃO DA FACÇÃO</small><h2 id="deckModalTitle">METAL RIO</h2><div id="deckGrid" class="deck-grid"></div><span>Toque numa carta para ampliar e consultar a habilidade.</span></div></section>
+<section id="tutorialModal" class="inspect-overlay hidden" aria-modal="true"><div class="tutorial-panel"><small>TUTORIAL DA FORJA</small><i id="tutorialNumber">1 / 4</i><b id="tutorialTitle">ESCOLHA UMA CARTA</b><p id="tutorialText"></p><div class="tutorial-actions"><button id="skipTutorial">PULAR</button><button id="nextTutorial">PRÓXIMO ›</button></div></div></section>
 
 <section id="result" class="screen result-screen hidden"><div class="resultbox"><span class="result-gear">⚙</span><small>FIM DO CONTRATO</small><h2 id="resultTitle">VITÓRIA!</h2><p id="resultText"></p><button id="again" class="primary">NOVA PARTIDA</button></div></section>
 <section id="victoryFx" class="victory-fx hidden"><div class="victory-cards"><i></i><i></i><i></i></div><div class="victory-emblem"><img src="art/victory_emblem.png" alt=""><small>CONTRATO CONQUISTADO</small><b>VITÓRIA!</b><span>BEARDEDBR PRODUÇÕES</span></div><div class="victory-sparks"><i></i><i></i><i></i><i></i><i></i><i></i></div></section>

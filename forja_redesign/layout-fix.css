@@ -163,6 +163,10 @@ header #sound:not(.sound-on) {
 .bearded-brand span { color: #f4e6c2; font-size: 9px; margin-left: 5px; }
 .bearded-brand small { display: block; margin-top: 2px; color: #948a72; font-size: 6px; letter-spacing: 2.5px; }
 
+.menu-tools { display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:5px;margin-top:7px; }
+.menu-tools button,.menu-tools label { height:34px;display:flex;align-items:center;justify-content:center;margin:0;border:1px solid #8f693b;background:#101d20e8;color:#f3d28c;font:bold 7px Arial;letter-spacing:.4px; }
+.menu-tools select { max-width:86px;margin-left:4px;border:0;background:#223438;color:#fff1c7;font:bold 7px Arial;outline:none; }
+
 .victory-fx {
   position: absolute;
   z-index: 100;
@@ -366,7 +370,15 @@ header,.score-panel,.rows,.belt,.card-info,.history-bar,.action-row,.hand { z-in
 .slots .small-card { cursor:pointer; outline:1px solid transparent; }.slots .small-card:active { transform:scale(1.35); filter:brightness(1.4); }.slots .small-card:after { content:"+"; position:absolute; right:1px; bottom:0; z-index:5; width:9px; height:9px; display:grid; place-items:center; border-radius:50%; background:#05090acc; color:#fff3b4; font:bold 8px Arial; }
 
 .inspect-overlay { position:absolute; z-index:180; inset:0; display:flex; align-items:center; justify-content:center; padding:18px; background:radial-gradient(circle,#173339aa,#020506f2 70%); backdrop-filter:blur(5px); }
+#cardInspect { z-index:200; }
 .inspect-panel,.history-panel { position:relative; width:min(94vw,430px); max-height:94dvh; padding:17px 15px 12px; overflow:auto; border:3px solid var(--table-b,#f1b951); border-radius:8px; background:linear-gradient(145deg,#13272aed,#071012f7); box-shadow:0 0 34px var(--table-glow,#f5a62366),0 18px 36px #000; text-align:center; }
+.deck-panel { position:relative;width:min(96vw,500px);max-height:94dvh;padding:16px 11px 12px;overflow:auto;border:3px solid #f0b84f;border-radius:9px;background:linear-gradient(145deg,#14282bef,#050a0bf8);box-shadow:0 0 30px #f5a62355,0 18px 36px #000;text-align:center; }
+.deck-panel>small { color:#efbd61;font:900 8px Arial;letter-spacing:2px; }.deck-panel h2 { margin:4px 0 10px;color:#fff0c5;font-size:19px; }.deck-panel>span { display:block;margin-top:9px;color:#aab7b4;font-size:8px; }
+.deck-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;justify-items:center; }
+.deck-grid .gallery-card { width:132px;height:196px;flex:none;border-width:3px;border-radius:8px;box-shadow:0 0 12px var(--frame),0 8px 13px #000; }
+.deck-grid .gallery-card .card-art { height:120px; }.deck-grid .gallery-card .rarity { top:110px;font-size:9px; }.deck-grid .gallery-card .card-copy { height:73px;padding:4px 6px; }.deck-grid .gallery-card .card-copy b { font-size:10px;line-height:11px; }.deck-grid .gallery-card .card-copy small { font-size:7px; }.deck-grid .gallery-card .card-copy em { height:32px;font-size:9px;line-height:10px; }.deck-grid .gallery-card .power { width:34px;height:34px;font-size:16px; }
+.tutorial-panel { position:relative;width:min(88vw,390px);padding:24px 20px 18px;border:3px solid #ffc45d;border-radius:10px;background:radial-gradient(circle at top,#244044,#081012 68%);box-shadow:0 0 34px #f5a62377,0 18px 36px #000;text-align:center; }
+.tutorial-panel small { display:block;color:#efbd61;font:900 8px Arial;letter-spacing:2px; }.tutorial-panel i { display:block;margin:5px 0 14px;color:#7eeadd;font:normal 8px Arial; }.tutorial-panel>b { display:block;color:#fff0c3;font-size:18px; }.tutorial-panel p { min-height:78px;margin:10px 0 16px;color:#ded6c2;font-size:11px;line-height:16px; }.tutorial-actions { display:flex;gap:8px; }.tutorial-actions button { flex:1;height:38px;border:1px solid #d69c43;background:#17272a;color:#e9d4a7;font:bold 9px Arial; }.tutorial-actions button:last-child { background:linear-gradient(#ffbd3d,#de8018);color:#211306; }
 .inspect-close { position:absolute; z-index:5; top:7px; right:7px; width:32px; height:32px; border:1px solid #f0bd61; border-radius:50%; background:#1b2426; color:#ffe0a0; font-size:22px; }
 .inspect-panel>small,.history-panel>small { color:#efbd61; font:900 8px Arial; letter-spacing:2px; }.enemy-label { color:#ff6d7d!important; }
 #inspectCardHost { display:flex; justify-content:center; margin:8px 0; }
@@ -385,6 +397,7 @@ header,.score-panel,.rows,.belt,.card-info,.history-bar,.action-row,.hand { z-in
 @media (max-height: 650px) {
   .menu-screen { justify-content: flex-start; overflow-y: auto; }
   .faction-card { height: 132px; }
+  .menu-tools { margin-top:5px; }
   .hand { height: 174px; }
   .hand > .card { height: 162px; flex-basis: 112px; }
   .hand > .card .card-art { height: 96px; }
