@@ -285,16 +285,16 @@ header #sound:not(.sound-on) {
 @keyframes effectToast { 12%,72% { opacity:1; transform:translate(-50%,0) scale(1); } 100% { opacity:0; transform:translate(-50%,-12px) scale(.96); } }
 
 /* Molduras vetoriais 3D: metal chanfrado, rebites e componentes próprios. */
-.table-frame { position:absolute; z-index:2; inset:0; pointer-events:none; background-position:center; background-size:100% 100%; background-repeat:no-repeat; filter:drop-shadow(0 0 8px var(--table-glow,#ff8b1f88)); }
+.table-frame { position:absolute; z-index:40; inset:0; pointer-events:none; background-position:center; background-size:100% 100%; background-repeat:no-repeat; filter:drop-shadow(0 0 8px var(--table-glow,#ff8b1f88)); }
 .table-frame span { position:absolute; z-index:4; top:40px; left:50%; transform:translate(-50%,-50%); padding:3px 10px; white-space:nowrap; border:1px solid var(--table-b); border-radius:8px; background:linear-gradient(#172326,#050a0c); box-shadow:inset 0 1px #ffffff30,0 3px 7px #000,0 0 9px var(--table-glow); color:var(--table-b); font:900 6px/9px Arial; letter-spacing:1.5px; }
 .game-screen.frame-fornalha { --table-a:#b76019;--table-b:#ffd067;--table-glow:#ff721f7d; }
 .game-screen.frame-cobalto { --table-a:#078fa8;--table-b:#79f4ff;--table-glow:#00d9ff80; }
 .game-screen.frame-hidraulica { --table-a:#b41f32;--table-b:#ff8b71;--table-glow:#ff254d80; }
 .game-screen.frame-reator { --table-a:#7e32c8;--table-b:#f1a3ff;--table-glow:#c83cff80; }
-.game-screen.frame-fornalha .table-frame { background-image:url('art/frame_bronze.svg'); }
-.game-screen.frame-cobalto .table-frame { background-image:url('art/frame_cobalto.svg'); }
-.game-screen.frame-hidraulica .table-frame { background-image:url('art/frame_hydraulic.svg'); }
-.game-screen.frame-reator .table-frame { background-image:url('art/frame_reactor.svg'); }
+.game-screen.frame-fornalha .table-frame { background-image:url('art/frame_bronze.png'); }
+.game-screen.frame-cobalto .table-frame { background-image:url('art/frame_cobalto.png'); }
+.game-screen.frame-hidraulica .table-frame { background-image:url('art/frame_hydraulic.png'); }
+.game-screen.frame-reator .table-frame { background-image:url('art/frame_reactor.png'); }
 .game-screen.frame-cobalto .game-bg { filter:saturate(.88) hue-rotate(10deg); }
 .game-screen.frame-hidraulica .game-bg { filter:saturate(1.05) sepia(.12); }
 .game-screen.frame-reator .game-bg { filter:saturate(.95) hue-rotate(300deg); }

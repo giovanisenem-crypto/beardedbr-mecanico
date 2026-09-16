@@ -8,13 +8,14 @@ const decks={
   {n:'INSPETORA FINAL',p:7,t:'Qualidade',l:2,r:'RARA',a:'rio_05.jpg',h:'Protege uma máquina contra sabotagem.'},
   {n:'SETUP PERFEITO',p:7,t:'Ação',l:0,r:'ÉPICA',a:'rio_06.jpg',h:'Todas as cartas da linha recebem +1.'},
   {n:'PONTE ROLANTE',p:9,t:'Logística',l:1,r:'RARA',a:'rio_07.jpg',h:'Move a máquina mais forte para esta linha.'},
-  {n:'MANUTENÇÃO',p:6,t:'Equipe',l:2,r:'COMUM',a:'rio_08.jpg',h:'Recupera +4 de uma máquina danificada.'}]},
+  {n:'MANUTENÇÃO',p:6,t:'Equipe',l:2,r:'COMUM',a:'rio_08.jpg',h:'Recupera +4 de uma máquina danificada.'},
+  {n:'GIOVANI',p:10,t:'Regulador',l:0,r:'ÉPICA',a:'friend_giovani.jpg',h:'A máquina aliada mais fraca recebe +2.'}]},
  vulcao:{name:'FÁBRICA VULCÃO',flag:'FV',color:'#ff304f',art:'fabrica_vulcao.jpg',enemy:'rio',leader:'Mestre Fundidor',leaderText:'A primeira máquina pesada recebe +3.',cards:[
-  {n:'MESTRE FUNDIDOR',p:9,t:'Equipe',l:0,r:'ÉPICA',a:'vulcao_01.jpg',h:'Fortalece todas as cartas de fundição.'},{n:'FORNO VULCÃO',p:15,t:'Máquina pesada',l:0,r:'LENDÁRIA',a:'vulcao_02.jpg',h:'Perde 2 após cada rodada vencida.'},{n:'PRENSA TITÃ',p:12,t:'Máquina',l:0,r:'ÉPICA',a:'vulcao_03.jpg',h:'Ganha +2 contra máquinas leves.'},{n:'LINGOTE QUENTE',p:7,t:'Material',l:0,r:'RARA',a:'vulcao_04.jpg',h:'A próxima máquina recebe +3.'},{n:'GUINDASTE PESADO',p:10,t:'Logística',l:1,r:'RARA',a:'vulcao_05.jpg',h:'Puxa uma máquina da reserva.'},{n:'QUALIDADE BRUTA',p:6,t:'Qualidade',l:2,r:'COMUM',a:'vulcao_06.jpg',h:'Impede uma redução de poder.'},{n:'TÊMPERA TOTAL',p:8,t:'Ação',l:2,r:'ÉPICA',a:'vulcao_07.jpg',h:'Duplica o bônus de material.'},{n:'AÇO INCANDESCENTE',p:11,t:'Material',l:0,r:'RARA',a:'vulcao_08.jpg',h:'Causa -2 na linha rival.'}]},
+  {n:'MESTRE FUNDIDOR',p:9,t:'Equipe',l:0,r:'ÉPICA',a:'vulcao_01.jpg',h:'Fortalece todas as cartas de fundição.'},{n:'FORNO VULCÃO',p:15,t:'Máquina pesada',l:0,r:'LENDÁRIA',a:'vulcao_02.jpg',h:'Perde 2 após cada rodada vencida.'},{n:'PRENSA TITÃ',p:12,t:'Máquina',l:0,r:'ÉPICA',a:'vulcao_03.jpg',h:'Ganha +2 contra máquinas leves.'},{n:'LINGOTE QUENTE',p:7,t:'Material',l:0,r:'RARA',a:'vulcao_04.jpg',h:'A próxima máquina recebe +3.'},{n:'GUINDASTE PESADO',p:10,t:'Logística',l:1,r:'RARA',a:'vulcao_05.jpg',h:'Puxa uma máquina da reserva.'},{n:'QUALIDADE BRUTA',p:6,t:'Qualidade',l:2,r:'COMUM',a:'vulcao_06.jpg',h:'Impede uma redução de poder.'},{n:'TÊMPERA TOTAL',p:8,t:'Ação',l:2,r:'ÉPICA',a:'vulcao_07.jpg',h:'Duplica o bônus de material.'},{n:'AÇO INCANDESCENTE',p:11,t:'Material',l:0,r:'RARA',a:'vulcao_08.jpg',h:'Causa -2 na linha rival.'},{n:'JONATHAN',p:10,t:'Fundidor',l:0,r:'ÉPICA',a:'friend_jonathan.jpg',h:'A carta rival mais forte desta linha perde 2.'}]},
  turbo:{name:'LOGÍSTICA TURBO',flag:'LT',color:'#ffe600',art:'logistica_turbo.jpg',enemy:'vulcao',leader:'Piloto Turbo',leaderText:'Uma carta pode mudar de fileira por rodada.',cards:[
-  {n:'PILOTO TURBO',p:8,t:'Operadora',l:1,r:'ÉPICA',a:'turbo_01.jpg',h:'A logística mais forte recebe +2.'},{n:'EMPILHADEIRA ELÉTRICA',p:10,t:'Máquina',l:1,r:'RARA',a:'turbo_02.jpg',h:'Recebe +2 se jogada após um pallet.'},{n:'DOCA EXPRESSA',p:7,t:'Local',l:1,r:'RARA',a:'turbo_03.jpg',h:'Permite jogar uma carta adicional.'},{n:'PONTE ROLANTE',p:9,t:'Máquina',l:1,r:'ÉPICA',a:'turbo_04.jpg',h:'Move a carta mais forte entre linhas.'},{n:'ESTOQUISTA',p:6,t:'Equipe',l:1,r:'COMUM',a:'turbo_05.jpg',h:'Compra uma carta de material ou carga.'},{n:'PALLETS URGENTES',p:8,t:'Carga',l:1,r:'RARA',a:'turbo_06.jpg',h:'Ganha +1 por carta de logística.'},{n:'CAMINHÃO DE CARGA',p:12,t:'Máquina pesada',l:1,r:'ÉPICA',a:'turbo_07.jpg',h:'Dá +6 para uma fileira vizinha.'},{n:'ROTA OTIMIZADA',p:5,t:'Ação',l:2,r:'COMUM',a:'turbo_08.jpg',h:'Dá +2 para todas as cargas.'}]},
+  {n:'PILOTO TURBO',p:8,t:'Operadora',l:1,r:'ÉPICA',a:'turbo_01.jpg',h:'A logística mais forte recebe +2.'},{n:'EMPILHADEIRA ELÉTRICA',p:10,t:'Máquina',l:1,r:'RARA',a:'turbo_02.jpg',h:'Recebe +2 se jogada após um pallet.'},{n:'DOCA EXPRESSA',p:7,t:'Local',l:1,r:'RARA',a:'turbo_03.jpg',h:'Permite jogar uma carta adicional.'},{n:'PONTE ROLANTE',p:9,t:'Máquina',l:1,r:'ÉPICA',a:'turbo_04.jpg',h:'Move a carta mais forte entre linhas.'},{n:'ESTOQUISTA',p:6,t:'Equipe',l:1,r:'COMUM',a:'turbo_05.jpg',h:'Compra uma carta de material ou carga.'},{n:'PALLETS URGENTES',p:8,t:'Carga',l:1,r:'RARA',a:'turbo_06.jpg',h:'Ganha +1 por carta de logística.'},{n:'CAMINHÃO DE CARGA',p:12,t:'Máquina pesada',l:1,r:'ÉPICA',a:'turbo_07.jpg',h:'Dá +6 para uma fileira vizinha.'},{n:'ROTA OTIMIZADA',p:5,t:'Ação',l:2,r:'COMUM',a:'turbo_08.jpg',h:'Dá +2 para todas as cargas.'},{n:'JÚLIO',p:10,t:'Batedor',l:1,r:'ÉPICA',a:'friend_julio.jpg',h:'A carta de Logística mais fraca recebe +2.'}]},
  elite:{name:'MANUTENÇÃO ELITE',flag:'ME',color:'#d946ff',art:'manutencao_elite.jpg',enemy:'rio',leader:'Técnica Elite',leaderText:'Restaura +4 de uma máquina por rodada.',cards:[
-  {n:'TÉCNICA ELITE',p:9,t:'Engenheira',l:2,r:'LENDÁRIA',a:'elite_01.jpg',h:'Repara e protege uma máquina.'},{n:'OFICINA MÓVEL',p:10,t:'Máquina',l:2,r:'ÉPICA',a:'elite_02.jpg',h:'Todas as equipes recebem +1.'},{n:'LUBRIFICAÇÃO',p:6,t:'Ação',l:2,r:'COMUM',a:'elite_03.jpg',h:'Uma máquina ganha +1 por rodada.'},{n:'CALIBRADOR DIGITAL',p:8,t:'Ferramenta',l:2,r:'RARA',a:'elite_04.jpg',h:'Copia o bônus de outra ferramenta.'},{n:'SOLDADOR',p:7,t:'Equipe',l:2,r:'RARA',a:'elite_05.jpg',h:'Recupera uma máquina destruída.'},{n:'PEÇA SOBRESSALENTE',p:5,t:'Material',l:2,r:'COMUM',a:'elite_06.jpg',h:'Anula Ferramenta Quebrada.'},{n:'MECÂNICO CHEFE',p:12,t:'Equipe',l:2,r:'ÉPICA',a:'elite_07.jpg',h:'Dá +2 a todas as máquinas reparadas.'},{n:'REPARO URGENTE',p:9,t:'Ação',l:2,r:'RARA',a:'elite_08.jpg',h:'Restaura poder e joga novamente.'}]}
+  {n:'TÉCNICA ELITE',p:9,t:'Engenheira',l:2,r:'LENDÁRIA',a:'elite_01.jpg',h:'Repara e protege uma máquina.'},{n:'OFICINA MÓVEL',p:10,t:'Máquina',l:2,r:'ÉPICA',a:'elite_02.jpg',h:'Todas as equipes recebem +1.'},{n:'LUBRIFICAÇÃO',p:6,t:'Ação',l:2,r:'COMUM',a:'elite_03.jpg',h:'Uma máquina ganha +1 por rodada.'},{n:'CALIBRADOR DIGITAL',p:8,t:'Ferramenta',l:2,r:'RARA',a:'elite_04.jpg',h:'Copia o bônus de outra ferramenta.'},{n:'SOLDADOR',p:7,t:'Equipe',l:2,r:'RARA',a:'elite_05.jpg',h:'Recupera uma máquina destruída.'},{n:'PEÇA SOBRESSALENTE',p:5,t:'Material',l:2,r:'COMUM',a:'elite_06.jpg',h:'Anula Ferramenta Quebrada.'},{n:'MECÂNICO CHEFE',p:12,t:'Equipe',l:2,r:'ÉPICA',a:'elite_07.jpg',h:'Dá +2 a todas as máquinas reparadas.'},{n:'REPARO URGENTE',p:9,t:'Ação',l:2,r:'RARA',a:'elite_08.jpg',h:'Restaura poder e joga novamente.'},{n:'GABRIEL',p:10,t:'Técnico noturno',l:2,r:'ÉPICA',a:'friend_gabriel.jpg',h:'A carta de Qualidade mais fraca recebe +2.'}]}
 };
 let deck='rio',opponent='vulcao',hand=[],me=[[],[],[]],ai=[[],[],[]],round=1,wins=0,losses=0,busy=false,selected=null,selectedLane=null;
 let meBonus=[0,0,0],aiBonus=[0,0,0],meShield=[false,false,false],aiShield=[false,false,false];
@@ -22,10 +23,11 @@ let mePending=0,aiPending=0,lastMe=null,lastAi=null,meLeaderUsed=false,aiLeaderU
 let soundOn=true,trackIndex=-1,actionHistory=[];
 const TRACKS=['audio/forja_industrial.ogg','audio/forja_rock.ogg','audio/forja_eletronica.ogg'];
 const FRAMES=[{c:'frame-fornalha',n:'FORNALHA DE BRONZE'},{c:'frame-cobalto',n:'AÇO COBALTO'},{c:'frame-hidraulica',n:'PRENSA HIDRÁULICA'},{c:'frame-reator',n:'REATOR VIOLETA'}];
+const FRIENDS=new Set(['JÚLIO','GIOVANI','JONATHAN','GABRIEL']);
 const L=['USINAGEM','LOGÍSTICA','QUALIDADE'],q=s=>document.querySelector(s),mix=a=>[...a].sort(()=>Math.random()-.5);
 const flat=a=>a.flat(),laneValue=(a,b,i)=>a[i].reduce((s,c)=>s+c.p,0)+b[i],total=(a,b)=>flat(a).reduce((s,c)=>s+c.p,0)+b.reduce((s,n)=>s+n,0);
 const copy=(c,penalty=0)=>({...c,p:Math.max(1,c.p-(c.n==='FORNO VULCÃO'?penalty:0)),base:c.p,repaired:false,lubed:false});
-function deal(key,side){const penalty=side==='me'?fornoPenaltyMe:fornoPenaltyAi;return mix(decks[key].cards).slice(0,6).map(c=>copy(c,penalty))}
+function deal(key,side){const penalty=side==='me'?fornoPenaltyMe:fornoPenaltyAi,pool=mix(decks[key].cards),picked=pool.slice(0,6),friend=pool.find(c=>FRIENDS.has(c.n));if(friend&&!picked.includes(friend))picked[picked.length-1]=friend;return picked.map(c=>copy(c,penalty))}
 function state(side){return side==='me'?{own:me,enemy:ai,bonus:meBonus,enemyBonus:aiBonus,shield:meShield,enemyShield:aiShield,key:deck}:{own:ai,enemy:me,bonus:aiBonus,enemyBonus:meBonus,shield:aiShield,enemyShield:meShield,key:opponent}}
 function sfx(name){try{if(window.NativeAudio)NativeAudio.sfx(name)}catch(e){}}
 function recordAction(text,side,cardName){const who=side==='ai'?'RIVAL':'VOCÊ',entry={who,card:cardName||'EFEITO',text,enemy:side==='ai'};actionHistory.unshift(entry);actionHistory=actionHistory.slice(0,16);q('#lastAction').textContent=`${who} • ${entry.card}: ${text}`}
@@ -58,6 +60,7 @@ function applyAbility(c,side,lane){const st=state(side),key=st.key+':'+c.n,leade
   case'rio:SETUP PERFEITO':st.own[lane].forEach(x=>{if(x!==c)x.p+=1});text='Setup Perfeito: fileira inteira +1';break;
   case'rio:PONTE ROLANTE':{const m=moveStrongest(st.own,lane);text=m?m.n+' movida para '+L[lane]:'Nenhuma máquina para mover';break}
   case'rio:MANUTENÇÃO':{const m=weakest(flat(st.own),x=>/Máquina/.test(x.t));if(m){m.p+=4;m.repaired=true;text=m.n+' reparada: +4'}break}
+  case'rio:GIOVANI':{const m=weakest(flat(st.own),x=>/Máquina/.test(x.t));if(m){m.p+=2;text=m.n+' recebeu ajuste de precisão: +2'}else{c.p+=2;text='Ajuste próprio de precisão: +2'}break}
   case'vulcao:MESTRE FUNDIDOR':st.own[lane].forEach(x=>{if(x!==c)x.p+=1});text='Fundição fortalecida: fileira +1';break;
   case'vulcao:FORNO VULCÃO':text='Forno Vulcão em potência máxima';break;
   case'vulcao:PRENSA TITÃ':if(st.enemy[lane].some(x=>x.t==='Máquina')){c.p+=2;text='Prensa contra máquina leve: +2'}break;
@@ -66,6 +69,7 @@ function applyAbility(c,side,lane){const st=state(side),key=st.key+':'+c.n,leade
   case'vulcao:QUALIDADE BRUTA':st.shield[lane]=true;text=L[lane]+' protegida contra redução';break;
   case'vulcao:TÊMPERA TOTAL':{let n=0;flat(st.own).filter(x=>x.t==='Material').forEach(x=>{const b=Math.max(2,x.p-x.base);x.p+=b;n++});text=n?'Bônus de '+n+' materiais duplicados':'Nenhum material em campo';break}
   case'vulcao:AÇO INCANDESCENTE':text=damageStrongest(st,lane,2);break;
+  case'vulcao:JONATHAN':text=damageStrongest(st,lane,2);break;
   case'turbo:PILOTO TURBO':{const x=strongest(st.own[lane],y=>y.t==='Logística'&&y!==c);if(x){x.p+=2;text=x.n+' reativada: +2'}break}
   case'turbo:EMPILHADEIRA ELÉTRICA':if((side==='me'?lastMe:lastAi)?.n==='PALLETS URGENTES'){c.p+=2;text='Combo com Pallets: +2'}break;
   case'turbo:DOCA EXPRESSA':extra=true;text='Doca Expressa: jogue outra carta';break;
@@ -74,6 +78,7 @@ function applyAbility(c,side,lane){const st=state(side),key=st.key+':'+c.n,leade
   case'turbo:PALLETS URGENTES':{const n=flat(st.own).filter(x=>x.t==='Logística').length;c.p+=n;text='Pallets: +'+n+' por logística';break}
   case'turbo:CAMINHÃO DE CARGA':{const near=lane===0?1:lane-1;st.bonus[near]+=6;text=L[near]+' recebeu +6';break}
   case'turbo:ROTA OTIMIZADA':{let n=0;flat(st.own).filter(x=>x.t==='Carga').forEach(x=>{x.p+=2;n++});text=n+' cargas receberam +2';break}
+  case'turbo:JÚLIO':{const x=weakest(flat(st.own),y=>y!==c&&(y.t==='Logística'||y.l===1));if(x){x.p+=2;text=x.n+' recebeu rota segura: +2'}else{c.p+=2;text='Júlio abriu a rota: +2'}break}
   case'elite:TÉCNICA ELITE':{const m=weakest(flat(st.own),x=>/Máquina/.test(x.t)&&x!==c);if(m){m.p+=4;m.repaired=true;st.shield[lane]=true;text=m.n+' reparada +4 e protegida'}break}
   case'elite:OFICINA MÓVEL':{let n=0;flat(st.own).filter(x=>x.t==='Equipe').forEach(x=>{x.p+=1;n++});text=n+' equipes receberam +1';break}
   case'elite:LUBRIFICAÇÃO':{const m=strongest(flat(st.own),x=>/Máquina/.test(x.t));if(m){m.p+=1;m.lubed=true;text=m.n+' lubrificada: +1 agora e no fim'}break}
@@ -82,6 +87,7 @@ function applyAbility(c,side,lane){const st=state(side),key=st.key+':'+c.n,leade
   case'elite:PEÇA SOBRESSALENTE':st.shield[lane]=true;text=L[lane]+' protegida contra quebra';break;
   case'elite:MECÂNICO CHEFE':{let n=0;flat(st.own).filter(x=>x.repaired).forEach(x=>{x.p+=2;n++});text=n+' máquinas reparadas receberam +2';break}
   case'elite:REPARO URGENTE':{const m=weakest(flat(st.own),x=>/Máquina/.test(x.t));if(m){m.p+=3;m.repaired=true}extra=true;text=(m?m.n+' restaurada +3. ':'')+'Jogue novamente';break}
+  case'elite:GABRIEL':{const x=weakest(flat(st.own),y=>y!==c&&y.l===2);if(x){x.p+=2;text=x.n+' recebeu diagnóstico noturno: +2'}else{c.p+=2;text='Diagnóstico próprio: +2'}break}
  }
  const resolved=text||c.n+' ativada';c.lastEffect=resolved;if(side==='me')lastMe=c;else lastAi=c;return{text:resolved,extra}
 }
