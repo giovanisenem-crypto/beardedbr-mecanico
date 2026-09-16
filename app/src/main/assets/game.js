@@ -11,7 +11,8 @@
     status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), score: document.querySelector('#score'), power: document.querySelector('#power'), fps: document.querySelector('#fps'),
     sound: document.querySelector('#sound'), message: document.querySelector('#message'),
     messageText: document.querySelector('#message div'), result: document.querySelector('#result'),
-    resultStats: document.querySelector('#result-stats')
+    resultStats: document.querySelector('#result-stats'), bossHud: document.querySelector('#boss-hud'),
+    bossHealth: document.querySelector('#boss-health')
   };
   const backgroundSources = [
     'art/forge_stage.webp', 'art/forge_stage_02.webp', 'art/forge_stage_03.webp',
@@ -24,9 +25,10 @@
   const sentinelSprite = new Image();
   const launcherSprite = new Image();
   const crateSprite = new Image();
+  const bossSprite = new Image();
   let loaded = 0;
   const ready = () => {
-    if (++loaded === backgrounds.length + 5) setTimeout(() => {
+    if (++loaded === backgrounds.length + 6) setTimeout(() => {
       ui.loading.classList.add('hidden'); ui.intro.classList.remove('hidden'); draw();
     }, 650);
   };
@@ -36,6 +38,7 @@
   sentinelSprite.onload = ready; sentinelSprite.src = 'art/sentinel.webp';
   launcherSprite.onload = ready; launcherSprite.src = 'art/rivet_launcher.webp';
   crateSprite.onload = ready; crateSprite.src = 'art/supply_crate.webp';
+  bossSprite.onload = ready; bossSprite.src = 'art/forge_guardian.webp';
 
   // Every collider follows a visible steel surface in one of the seven background panels.
   const platforms = [
@@ -54,7 +57,7 @@
     { x1: W * 6 + 833, x2: W * 6 + 1122, y: 323 }
   ];
   const spawn = { x: 165, y: 548 };
-  const checkpoints = [{ x: W * 2 + 918, y: 548 }, { x: W * 4 + 1118, y: 548 }];
+  const checkpoints = [{ x: W * 2 + 918, y: 548 }, { x: W * 4 + 1118, y: 548 }, { x: W * 6 + 1148, y: 548 }];
   const presses = [{ x: W * 5 + 850, phase: 0, wasDown: false }];
   const enemies = [
     { x: W + 785, min: W + 660, max: W + 950, y: 548, dir: 1, alive: true },
@@ -68,8 +71,9 @@
     { x: 1240, y: 548, kind: 'points', reward: 300 }, { x: W + 1320, y: 548, kind: 'magnet' },
     { x: W * 2 + 1450, y: 548, kind: 'points', reward: 400 }, { x: W * 3 + 280, y: 548, kind: 'spread' },
     { x: W * 4 + 1500, y: 548, kind: 'magnet' }, { x: W * 5 + 1370, y: 548, kind: 'spread' },
-    { x: W * 6 + 1320, y: 548, kind: 'points', reward: 600 }
+    { x: W * 6 + 330, y: 548, kind: 'points', reward: 600 }
   ].map(crate => ({ ...crate, w: 125, h: 120, hp: 2, alive: true, hitFlash: 0 }));
+  const boss = { x: W * 6 + 1430, y: 548, min: W * 6 + 1330, max: WORLD_W - 165, dir: -1, hp: 10, maxHp: 10, alive: true, active: false, introduced: false, hitFlash: 0, shotClock: 1.25 };
   const collectibles = [
     { x: 240, y: 468 }, { x: 835, y: 468 }, { x: 1375, y: 468 },
     { x: W + 630, y: 201 }, { x: W + 1160, y: 201 }, { x: W + 1400, y: 468 },
@@ -88,7 +92,7 @@
   const smoke = Array.from({ length: 22 }, (_, i) => ({
     x: (i * 617 + 300) % WORLD_W, y: 510 - (i % 4) * 48, phase: i * .7, size: 65 + (i % 4) * 24
   }));
-  const bursts = [], projectiles = [], powerups = [];
+  const bursts = [], projectiles = [], powerups = [], bossShots = [];
   let playing = false, paused = false, last = 0, deaths = 0, defeats = 0, collected = 0, points = 0, won = false, cameraX = 0, checkpointIndex = -1;
   let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
   let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
@@ -155,11 +159,13 @@
     if (magnetTimer > 0) active.push(`ÍMÃ ${Math.ceil(magnetTimer)}s`);
     if (spreadTimer > 0) active.push(`TRIPLO ${Math.ceil(spreadTimer)}s`);
     ui.power.textContent = active.join(' · '); ui.power.classList.toggle('hidden', active.length === 0);
+    ui.bossHud.classList.toggle('hidden', !boss.active || !boss.alive || won);
+    ui.bossHealth.style.width = `${Math.max(0, boss.hp / boss.maxHp * 100)}%`;
   }
   function reset(showText = false) {
     const safe = checkpointIndex >= 0 ? checkpoints[checkpointIndex] : spawn;
     player.x = safe.x; player.y = safe.y; player.vx = 0; player.vy = 0;
-    player.grounded = true; player.frame = 0; projectiles.length = 0; shootPose = 0; muzzleFlash = 0;
+    player.grounded = true; player.frame = 0; projectiles.length = 0; bossShots.length = 0; shootPose = 0; muzzleFlash = 0;
     cameraX = Math.max(0, Math.min(WORLD_W - W, player.x - W * .28));
     won = false; updateHud();
     if (showText) flash(checkpointIndex >= 0 ? 'QUEDA — RETORNANDO AO CHECKPOINT' : 'QUEDA — VOLTANDO AO INÍCIO', 950);
@@ -196,6 +202,13 @@
     enemy.alive = false; defeats++; points += 250; burstAt(enemy.x, enemy.y - 72); shake = 8;
     tone(105, .22, 'sawtooth', .05); flash(message, 700); updateHud();
   }
+  function destroyBoss() {
+    if (!boss.alive) return;
+    boss.alive = false; boss.active = false; points += 2000; shake = 28;
+    for (let n = 0; n < 5; n++) burstAt(boss.x + (Math.random() - .5) * 170, boss.y - 35 - Math.random() * 170);
+    tone(72, .55, 'sawtooth', .075); tone(220, .7, 'square', .035);
+    flash('GUARDIÃO DERROTADO — PORTÃO LIBERADO', 1700); updateHud();
+  }
   function fireRivet() {
     const angles = spreadTimer > 0 ? [-115, 0, 115] : [0];
     angles.forEach(vy => projectiles.push({
@@ -209,6 +222,7 @@
   function updateProjectiles(dt) {
     enemies.forEach(enemy => { enemy.hitFlash = Math.max(0, enemy.hitFlash - dt); });
     crates.forEach(crate => { crate.hitFlash = Math.max(0, crate.hitFlash - dt); });
+    boss.hitFlash = Math.max(0, boss.hitFlash - dt);
     for (let i = projectiles.length - 1; i >= 0; i--) {
       const shot = projectiles[i]; shot.x += shot.vx * dt; shot.y += shot.vy * dt; shot.life -= dt;
       let hit = false;
@@ -234,8 +248,39 @@
           break;
         }
       }
+      if (!hit && boss.alive && boss.active && Math.abs(shot.x - boss.x) < 128 && shot.y > boss.y - 230 && shot.y < boss.y - 15) {
+        hit = true; boss.hp--; boss.hitFlash = .17; shake = 5; burstAt(shot.x, shot.y);
+        tone(145, .09, 'square', .04);
+        if (boss.hp <= 0) destroyBoss(); else updateHud();
+      }
       if (hit || shot.life <= 0 || shot.x < 0 || shot.x > WORLD_W) projectiles.splice(i, 1);
     }
+  }
+  function updateBoss(dt) {
+    if (!boss.alive) return false;
+    if (!boss.active && player.x > W * 6 + 1080) {
+      boss.active = true;
+      if (!boss.introduced) { boss.introduced = true; flash('GUARDIÃO DA FORJA — DESTRUA O NÚCLEO', 1700); tone(82, .5, 'sawtooth', .05); }
+      updateHud();
+    }
+    if (!boss.active) return false;
+    boss.x += boss.dir * 30 * dt;
+    if (boss.x <= boss.min) { boss.x = boss.min; boss.dir = 1; }
+    if (boss.x >= boss.max) { boss.x = boss.max; boss.dir = -1; }
+    boss.shotClock -= dt;
+    if (boss.shotClock <= 0) {
+      boss.shotClock = 1.7;
+      const dx = player.x - (boss.x - 120), dy = player.y - 112 - (boss.y - 122), distance = Math.max(1, Math.hypot(dx, dy));
+      bossShots.push({ x: boss.x - 120, y: boss.y - 122, vx: dx / distance * 395, vy: dy / distance * 395, life: 4 });
+      tone(104, .16, 'sawtooth', .045);
+    }
+    for (let i = bossShots.length - 1; i >= 0; i--) {
+      const shot = bossShots[i]; shot.x += shot.vx * dt; shot.y += shot.vy * dt; shot.life -= dt;
+      if (Math.abs(shot.x - player.x) < 34 && shot.y > player.y - player.h * .82 && shot.y < player.y + 16) return true;
+      if (shot.life <= 0 || shot.x < 0 || shot.x > WORLD_W) bossShots.splice(i, 1);
+    }
+    const pLeft = player.x - player.w * .3, pRight = player.x + player.w * .3, pTop = player.y - player.h * .86;
+    return pRight > boss.x - 116 && pLeft < boss.x + 116 && player.y > boss.y - 218 && pTop < boss.y - 8;
   }
   function update(dt) {
     updateParticles(dt);
@@ -314,6 +359,10 @@
       deaths++; updateSiren(false); reset(false); flash('ATINGIDO PELO SENTINELA — RETORNANDO AO CHECKPOINT', 1100); return;
     }
 
+    if (updateBoss(dt)) {
+      deaths++; reset(false); flash('ATINGIDO PELO GUARDIÃO — O DANO NO NÚCLEO FOI MANTIDO', 1250); return;
+    }
+
     if (player.y > H + 180) { deaths++; updateSiren(false); reset(true); return; }
     const nextCheckpoint = checkpoints[checkpointIndex + 1];
     if (nextCheckpoint && player.x > nextCheckpoint.x - 70 && player.grounded) {
@@ -335,7 +384,9 @@
     if (crushed) {
       deaths++; updateSiren(false); reset(false); flash('ATINGIDO PELA PRENSA — RETORNANDO AO CHECKPOINT', 1100); return;
     }
-    if (!won && player.x > WORLD_W - 205 && player.grounded) {
+    if (!won && player.x > WORLD_W - 205 && player.grounded && boss.alive) {
+      player.x = WORLD_W - 285; player.vx = 0; flash('PORTÃO BLOQUEADO — DERROTE O GUARDIÃO', 900);
+    } else if (!won && player.x > WORLD_W - 205 && player.grounded) {
       won = true; player.vx = 0; points += Math.max(0, 1000 - deaths * 100); updateSiren(false); setAudioLevel();
       flash('FASE 1 CONCLUÍDA — PORTÃO ALCANÇADO!', 900);
       ui.status.textContent = `FASE 1 CONCLUÍDA · QUEDAS ${deaths}`;
@@ -343,7 +394,7 @@
       ui.score.textContent = `PONTOS ${String(points).padStart(4, '0')}`;
       setTimeout(() => {
         ui.controls.classList.add('hidden');
-        ui.resultStats.textContent = `PONTOS  ${points}\nENGRENAGENS  ${collected}/${collectibles.length}\nSUCATA  ${defeats}/${enemies.length}\nCAIXAS  ${crates.filter(crate => !crate.alive).length}/${crates.length}\nQUEDAS  ${deaths}`;
+        ui.resultStats.textContent = `PONTOS  ${points}\nENGRENAGENS  ${collected}/${collectibles.length}\nSUCATA  ${defeats}/${enemies.length}\nGUARDIÃO  DERROTADO\nCAIXAS  ${crates.filter(crate => !crate.alive).length}/${crates.length}\nQUEDAS  ${deaths}`;
         ui.result.classList.remove('hidden');
       }, 900);
     }
@@ -474,6 +525,28 @@
       ctx.beginPath(); ctx.arc(42, -85, 25, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     });
   }
+  function drawBoss() {
+    if (!boss.alive || !bossSprite.complete) return;
+    const x = boss.x - cameraX; if (x < -280 || x > W + 280) return;
+    const w = 270, h = 235;
+    ctx.save(); ctx.translate(x, boss.y);
+    ctx.drawImage(bossSprite, -w / 2, -h, w, h);
+    const pulse = .18 + Math.sin(performance.now() * .012) * .05;
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,87,8,${pulse})`;
+    ctx.beginPath(); ctx.arc(24, -125, 52, 0, Math.PI * 2); ctx.fill();
+    if (boss.hitFlash > 0) { ctx.globalAlpha = Math.min(1, boss.hitFlash * 5); ctx.drawImage(bossSprite, -w / 2, -h, w, h); }
+    ctx.restore();
+  }
+  function drawBossShots() {
+    bossShots.forEach(shot => {
+      const x = shot.x - cameraX; if (x < -60 || x > W + 60) return;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const glow = ctx.createRadialGradient(x, shot.y, 3, x, shot.y, 30);
+      glow.addColorStop(0, '#fff6bc'); glow.addColorStop(.22, '#ffb21f'); glow.addColorStop(.6, 'rgba(255,65,0,.72)'); glow.addColorStop(1, 'rgba(255,20,0,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x, shot.y, 30, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffd15a'; ctx.beginPath(); ctx.arc(x, shot.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    });
+  }
   function drawProjectiles() {
     projectiles.forEach(shot => {
       const x = shot.x - cameraX; if (x < -50 || x > W + 50) return;
@@ -526,6 +599,8 @@
     drawObjectives();
     drawProjectiles();
     drawEnemies();
+    drawBoss();
+    drawBossShots();
     if (heroSheet.complete) { drawHero(); drawWeapon(); }
     drawPresses();
     const vignette = ctx.createRadialGradient(W / 2, H / 2, 180, W / 2, H / 2, 1050);
@@ -553,7 +628,8 @@
     crates.forEach(crate => { crate.alive = true; crate.hp = 2; crate.hitFlash = 0; });
     collectibles.forEach(item => { item.x = item.startX; item.y = item.startY; item.picked = false; });
     presses.forEach(press => { press.wasDown = false; });
-    projectiles.length = 0; powerups.length = 0; shootCooldown = 0; shootPose = 0; muzzleFlash = 0;
+    boss.x = W * 6 + 1430; boss.dir = -1; boss.hp = boss.maxHp; boss.alive = true; boss.active = false; boss.introduced = false; boss.hitFlash = 0; boss.shotClock = 1.25;
+    projectiles.length = 0; bossShots.length = 0; powerups.length = 0; shootCooldown = 0; shootPose = 0; muzzleFlash = 0;
     magnetTimer = 0; spreadTimer = 0; keys.attack = false; ui.power.classList.add('hidden');
     ui.result.classList.add('hidden'); ui.controls.classList.remove('hidden');
     paused = false; playing = true; reset(); setAudioLevel();
