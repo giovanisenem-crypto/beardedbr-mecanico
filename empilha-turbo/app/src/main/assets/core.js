@@ -19,12 +19,12 @@ function moveCircle(body,dx,dy,radius,rects,bounds){
 function score(deliveries,integritySum,timeLeft,won){return Math.max(0,Math.round(deliveries*400+integritySum*3+(won?Math.max(0,timeLeft)*12:0)));}
 function credits(deliveries,integritySum,won){return Math.max(0,Math.round(deliveries*22+integritySum*.16+(won?35:0)));}
 function cleanSave(raw){
- var out={credits:0,best:0,bestTime:null,stars:[0,0,0],upgrades:{engine:0,tires:0,forks:0},sound:true};
+ var out={credits:0,best:0,bestTime:null,upgrades:{engine:0,tires:0,forks:0},sound:true};
  if(!raw||typeof raw!=="object")return out;
  ["credits","best"].forEach(function(k){if(Number.isFinite(raw[k]))out[k]=clamp(Math.floor(raw[k]),0,10000000);});
  if(Number.isFinite(raw.bestTime)&&raw.bestTime>0)out.bestTime=raw.bestTime;
  if(raw.upgrades&&typeof raw.upgrades==="object")["engine","tires","forks"].forEach(function(k){if(Number.isFinite(raw.upgrades[k]))out.upgrades[k]=clamp(Math.floor(raw.upgrades[k]),0,3);});
- if(Array.isArray(raw.stars))for(var z=0;z<3;z++)if(Number.isFinite(raw.stars[z]))out.stars[z]=clamp(Math.floor(raw.stars[z]),0,3);if(typeof raw.sound==="boolean")out.sound=raw.sound;return out;
+ if(Array.isArray(raw.stars)){out.stars=[0,0,0];for(var z=0;z<3;z++)if(Number.isFinite(raw.stars[z]))out.stars[z]=clamp(Math.floor(raw.stars[z]),0,3);}if(typeof raw.sound==="boolean")out.sound=raw.sound;return out;
 }
 return {clamp:clamp,length:length,normalAngle:normalAngle,moveCircle:moveCircle,score:score,credits:credits,cleanSave:cleanSave};
 });
