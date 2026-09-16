@@ -219,6 +219,7 @@ function makeTerrain(){
  for(var cx=325;cx<975;cx+=160){rr(g,cx,385,112,25,3,"#172d30","#7ca39f");for(var rrk=0;rrk<6;rrk++){g.fillStyle=rrk%2?"#547a77":"#233f40";g.fillRect(cx+5+rrk*17,390,15,15);}g.fillStyle="#f0b23c";g.fillRect(cx+10,405,92,3);}
 }
 function render(){
+ ctx.imageSmoothingEnabled=false;
  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle="#172b31";ctx.fillRect(0,0,W,H);
  zoom=clamp(Math.min(W/760,H/430),.66,1.5);
  var vw=W/zoom,vh=H/zoom,cx=vw>=WORLD.w?WORLD.w/2:clamp(cam.x,vw/2,WORLD.w-vw/2),cy=vh>=WORLD.h?WORLD.h/2:clamp(cam.y,vh/2,WORLD.h-vh/2);
