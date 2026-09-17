@@ -308,8 +308,13 @@ header #sound:not(.sound-on) {
 }
 .play-stage.enemy-play { background:radial-gradient(circle,#4a1422d9 0 18%,#020506e8 68%); }
 .play-stage.flying { opacity:.18; }
+.play-stage.legendary-play { overflow:hidden;background:radial-gradient(circle,var(--legend-color,#ffd064) 0 2%,#071517ed 28%,#010304f5 72%);animation:legendaryStage 1.95s ease both; }
+.play-stage.legendary-play::before,.play-stage.legendary-play::after { content:"";position:absolute;z-index:0;width:min(94vw,520px);aspect-ratio:1;border:3px solid var(--legend-color,#ffd064);border-radius:50%;box-shadow:0 0 24px var(--legend-color,#ffd064),inset 0 0 24px var(--legend-color,#ffd064);animation:legendaryRing 1.7s cubic-bezier(.15,.75,.2,1) both; }
+.play-stage.legendary-play::after { width:min(68vw,370px);border-style:dashed;animation-direction:reverse;animation-duration:1.35s; }
+.play-stage.legendary-play>* { position:relative;z-index:1; }
 .play-stage>b { color:var(--deck-color,#68efff);font-size:11px;letter-spacing:2px;text-shadow:0 0 12px currentColor,0 3px 5px #000; }
 .play-stage.enemy-play>b { color:var(--enemy-color,#ff5d70); }
+.play-stage.legendary-play>b { color:#fff2ba;font-size:14px;letter-spacing:3px;animation:legendaryTitle 1.5s ease both; }
 .play-stage p { width:min(82vw,390px);margin:0;padding:7px 10px;border:1px solid #8b7045;background:#081315e8;color:#f6e5bd;font-size:10px;font-weight:800;line-height:13px;text-align:center;box-shadow:0 6px 14px #000b; }
 #playStageCard { display:flex;align-items:center;justify-content:center;width:190px;height:285px;perspective:700px; }
 #playStageCard .battle-card { flex:0 0 174px;width:174px;height:260px;border-width:4px;border-radius:11px;box-shadow:0 0 28px var(--frame),0 20px 30px #000;animation:battleReveal .55s cubic-bezier(.2,.8,.2,1); }
@@ -320,7 +325,19 @@ header #sound:not(.sound-on) {
 #playStageCard .battle-card .card-copy small { font-size:8px; }
 #playStageCard .battle-card .card-copy em { margin-top:5px;height:auto;font-size:10px;line-height:12px; }
 #playStageCard .battle-card .power { width:44px;height:44px;font-size:20px; }
+#playStageCard .battle-card.legendary-special { border-color:#fff2a1;box-shadow:0 0 14px #fff,0 0 42px var(--legend-color,var(--frame)),0 22px 34px #000;animation:legendaryReveal 1.05s cubic-bezier(.12,.82,.16,1); }
 @keyframes battleReveal { 0%{opacity:0;transform:scale(.35) rotateY(85deg)}65%{opacity:1;transform:scale(1.08) rotateY(-7deg)}100%{transform:scale(1) rotateY(0)} }
+@keyframes legendaryReveal { 0%{opacity:0;transform:translateZ(-500px) scale(.15) rotateY(180deg);filter:brightness(4)}48%{opacity:1;transform:translateZ(80px) scale(1.18) rotateY(-12deg);filter:brightness(1.8)}75%{transform:translateZ(35px) scale(.96) rotateY(7deg)}100%{transform:translateZ(0) scale(1) rotateY(0);filter:brightness(1)} }
+@keyframes legendaryStage { 0%{filter:brightness(2.2)}35%,100%{filter:brightness(1)} }
+@keyframes legendaryRing { 0%{opacity:0;transform:scale(.15) rotate(0)}35%,75%{opacity:.9}100%{opacity:0;transform:scale(1.45) rotate(210deg)} }
+@keyframes legendaryTitle { 0%{opacity:0;transform:translateY(-35px) scale(.6)}40%,80%{opacity:1;transform:translateY(0) scale(1.05)}100%{transform:scale(1)} }
+.legendary-seal { position:absolute;z-index:4;right:4px;top:28px;padding:2px 4px;border:1px solid #fff0a2;border-radius:3px;background:#0b1415df;color:#ffe274;font:bold 5px Arial;letter-spacing:.4px;text-shadow:0 0 5px currentColor;box-shadow:0 0 7px var(--frame); }
+.card.legendary-special:not(.small-card) { border-color:#fff0a0;box-shadow:0 0 7px var(--frame),0 4px 9px #000; }
+.card.legendary-special:not(.small-card)::after { content:"";position:absolute;z-index:5;inset:-80% -35%;pointer-events:none;background:linear-gradient(115deg,transparent 42%,#ffffff8c 49%,#fff6baad 51%,transparent 58%);transform:translateX(-58%);animation:legendaryShine 3.4s ease-in-out infinite; }
+@keyframes legendaryShine { 0%,58%{transform:translateX(-58%)}86%,100%{transform:translateX(58%)} }
+.legendary-land { animation:legendaryLand .95s cubic-bezier(.16,.8,.2,1)!important; }
+@keyframes legendaryLand { 0%{transform:scale(2.6) rotateY(80deg);filter:brightness(3);box-shadow:0 0 35px 20px var(--frame)}55%{transform:scale(.82) rotateY(-8deg)}100%{transform:scale(1);filter:brightness(1);box-shadow:0 0 10px var(--frame)} }
+.slots .legendary-seal { display:none; }
 .lane-effect { position:absolute;z-index:25;left:50%;top:50%;padding:4px 8px;border:2px solid currentColor;border-radius:14px;background:#071012eb;color:var(--deck-color,#00eaff);font:bold 11px Arial;white-space:nowrap;pointer-events:none;text-shadow:0 0 7px currentColor;box-shadow:0 0 16px currentColor;animation:laneEffect 1.25s ease-out both; }
 .enemy-rows .lane-effect { color:var(--enemy-color,#ff304f); }
 @keyframes laneEffect { 0%{opacity:0;transform:translate(-50%,20px) scale(.5)}18%,68%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}100%{opacity:0;transform:translate(-50%,-85px) scale(.85)} }

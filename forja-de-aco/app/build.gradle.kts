@@ -1,5 +1,5 @@
 plugins { id("com.android.application") }
 
 android { namespace = "br.com.beardedbr.forjadeaco"; compileSdk = 35
- defaultConfig { applicationId = "br.com.beardedbr.forjadeaco"; minSdk = 23; targetSdk = 35; versionCode = 17; versionName = "1.0" }
+ defaultConfig { applicationId = "br.com.beardedbr.forjadeaco"; minSdk = 23; targetSdk = 35; versionCode = 18; versionName = "1.0" }
 }
