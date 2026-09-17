@@ -11,8 +11,9 @@
     status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), score: document.querySelector('#score'), power: document.querySelector('#power'), fps: document.querySelector('#fps'),
     sound: document.querySelector('#sound'), message: document.querySelector('#message'),
     messageText: document.querySelector('#message div'), result: document.querySelector('#result'),
-    resultStats: document.querySelector('#result-stats'), bossHud: document.querySelector('#boss-hud'),
-    bossHealth: document.querySelector('#boss-health')
+    resultStats: document.querySelector('#result-stats'), resultStars: document.querySelector('#result-stars'),
+    resultObjectives: document.querySelector('#result-objectives'), resultRecord: document.querySelector('#result-record'),
+    introRecord: document.querySelector('#intro-record'), bossHud: document.querySelector('#boss-hud'), bossHealth: document.querySelector('#boss-health')
   };
   const backgroundSources = [
     'art/forge_stage.webp', 'art/forge_stage_02.webp', 'art/forge_stage_03.webp',
@@ -98,6 +99,16 @@
   let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
   let fpsClock = 0, fpsFrames = 0, shootCooldown = 0, shootPose = 0, muzzleFlash = 0, magnetTimer = 0, spreadTimer = 0;
   let gateProgress = 0, celebrating = false, victoryClock = 0, victoryToneStep = 0;
+  const SAVE_KEY = 'forja_de_aco_progress_v1';
+
+  function loadProgress() {
+    try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || { bestScore: 0, bestStars: 0, wins: 0, bestDeaths: null }; }
+    catch (_) { return { bestScore: 0, bestStars: 0, wins: 0, bestDeaths: null }; }
+  }
+  function updateIntroRecord() {
+    const progress = loadProgress();
+    ui.introRecord.textContent = progress.wins > 0 ? `RECORDE ${progress.bestScore} PTS · ${'★'.repeat(progress.bestStars)}${'☆'.repeat(3 - progress.bestStars)} · VITÓRIAS ${progress.wins}` : 'PRIMEIRA TENTATIVA';
+  }
 
   function pressState(press) {
     const t = (pressClock + press.phase) % 6.6;
@@ -304,10 +315,25 @@
   }
   function finishLevel() {
     celebrating = false; won = true; player.vx = 0; points += Math.max(0, 1000 - deaths * 100); updateSiren(false); setAudioLevel();
+    const bronze = true;
+    const silver = collected >= 14 && defeats >= 4;
+    const gold = collected === collectibles.length && defeats === enemies.length && deaths <= 2;
+    const stars = gold ? 3 : silver ? 2 : 1;
+    const previous = loadProgress();
+    const isRecord = points > previous.bestScore;
+    const progress = {
+      bestScore: Math.max(previous.bestScore, points), bestStars: Math.max(previous.bestStars, stars), wins: previous.wins + 1,
+      bestDeaths: previous.bestDeaths === null ? deaths : Math.min(previous.bestDeaths, deaths)
+    };
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch (_) {}
     ui.status.textContent = `FASE 1 CONCLUÍDA · QUEDAS ${deaths}`;
     ui.scrap.textContent = `SUCATA ${defeats}/${enemies.length}`;
     ui.score.textContent = `PONTOS ${String(points).padStart(4, '0')}`;
+    ui.resultStars.textContent = `${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}`;
     ui.resultStats.textContent = `PONTOS  ${points}\nENGRENAGENS  ${collected}/${collectibles.length}\nSUCATA  ${defeats}/${enemies.length}\nGUARDIÃO  DERROTADO\nCAIXAS  ${crates.filter(crate => !crate.alive).length}/${crates.length}\nQUEDAS  ${deaths}`;
+    ui.resultObjectives.innerHTML = `<span class="${bronze ? 'done' : ''}">★ DERROTAR<br>O GUARDIÃO</span><span class="${silver ? 'done' : ''}">★ 14 ENGRENAGENS<br>+ 4 SENTINELAS</span><span class="${gold ? 'done' : ''}">★ TUDO COLETADO<br>ATÉ 2 QUEDAS</span>`;
+    ui.resultRecord.textContent = `${isRecord ? 'NOVO RECORDE! · ' : ''}MELHOR ${progress.bestScore} PTS · ${progress.bestStars}/3 ESTRELAS`;
+    updateIntroRecord();
     ui.result.classList.remove('hidden');
   }
   function updateCelebration(dt) {
@@ -689,6 +715,7 @@
     ui.intro.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
     startNewRun();
   });
+  updateIntroRecord();
   document.querySelector('#replay').addEventListener('click', startNewRun);
   document.querySelector('#sound').addEventListener('click', () => {
     soundEnabled = !soundEnabled; ui.sound.textContent = soundEnabled ? '♪' : '×';
