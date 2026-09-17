@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const W = 1672, H = 941, WORLD_W = W * 7;
+  const W = 1672, H = 941, WORLD_W = W * 7, P2_WORLD_W = W * 2;
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
   ctx.imageSmoothingEnabled = true;
@@ -30,10 +30,11 @@
   const crateSprite = new Image();
   const bossSprite = new Image();
   const phaseTwoBackground = new Image();
+  const phaseTwoBackground2 = new Image();
   const steamVentSprite = new Image();
   let loaded = 0;
   const ready = () => {
-    if (++loaded === backgrounds.length + 8) setTimeout(() => {
+    if (++loaded === backgrounds.length + 9) setTimeout(() => {
       ui.loading.classList.add('hidden'); ui.map.classList.remove('hidden'); updateMap(); draw();
     }, 650);
   };
@@ -45,6 +46,7 @@
   crateSprite.onload = ready; crateSprite.src = 'art/supply_crate.webp';
   bossSprite.onload = ready; bossSprite.src = 'art/forge_guardian.webp';
   phaseTwoBackground.onload = ready; phaseTwoBackground.src = 'art/blast_furnace_preview.webp';
+  phaseTwoBackground2.onload = ready; phaseTwoBackground2.src = 'art/blast_furnace_02.webp';
   steamVentSprite.onload = ready; steamVentSprite.src = 'art/steam_vent.webp';
 
   // Every collider follows a visible steel surface in one of the seven background panels.
@@ -91,10 +93,22 @@
     { x: W * 6 + 730, y: 468 }, { x: W * 6 + 960, y: 243 }, { x: W * 6 + 1210, y: 468 }
   ].map(item => ({ ...item, startX: item.x, startY: item.y, picked: false }));
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
-  const phaseTwoPlatforms = [{ x1: 0, x2: 420, y: 568 }, { x1: 565, x2: 1175, y: 568 }, { x1: 1305, x2: W, y: 568 }];
-  const phaseTwoGears = [{ x: 245, y: 480 }, { x: 690, y: 480 }, { x: 910, y: 420 }, { x: 1115, y: 480 }, { x: 1450, y: 480 }].map(item => ({ ...item, picked: false }));
-  const phaseTwoEnemy = { x: 820, startX: 820, min: 680, max: 1080, y: 568, dir: 1, hp: 2, alive: true, hitFlash: 0 };
-  const phaseTwoState = { playing: false, won: false, deaths: 0, collected: 0, defeats: 0, points: 0, clock: 0, steamSpawn: 0 };
+  const phaseTwoPlatforms = [
+    { x1: 0, x2: 420, y: 568 }, { x1: 565, x2: 1175, y: 568 }, { x1: 1305, x2: W, y: 568 },
+    { x1: W, x2: W + 470, y: 590 }, { x1: W + 610, x2: W + 1120, y: 590 }, { x1: W + 1245, x2: P2_WORLD_W, y: 590 },
+    { x1: W + 760, x2: W + 1040, y: 335 }
+  ];
+  const phaseTwoGears = [
+    { x: 245, y: 480 }, { x: 690, y: 480 }, { x: 910, y: 420 }, { x: 1115, y: 480 }, { x: 1450, y: 480 },
+    { x: W + 220, y: 500 }, { x: W + 690, y: 500 }, { x: W + 815, y: 270 }, { x: W + 985, y: 270 }, { x: W + 1070, y: 500 }, { x: W + 1460, y: 500 }
+  ].map(item => ({ ...item, picked: false }));
+  const phaseTwoEnemies = [
+    { x: 820, min: 680, max: 1080, y: 568, dir: 1 },
+    { x: W + 790, min: W + 680, max: W + 1060, y: 590, dir: -1 }
+  ];
+  phaseTwoEnemies.forEach(enemy => { enemy.startX = enemy.x; enemy.startDir = enemy.dir; enemy.hp = 2; enemy.alive = true; enemy.hitFlash = 0; });
+  const phaseTwoVents = [{ x: 1035, y: 442, phase: 0, spawn: 0 }, { x: W + 1375, y: 464, phase: 2.35, spawn: 0 }];
+  const phaseTwoState = { playing: false, won: false, deaths: 0, collected: 0, defeats: 0, points: 0, clock: 0, checkpoint: false };
   const keys = { left: false, right: false, jump: false, attack: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
     x: (i * 431) % WORLD_W, y: 260 + (i * 83) % 310, vx: 15 + (i % 5) * 9,
@@ -127,8 +141,8 @@
     ui.phaseTwo.disabled = !phaseTwoUnlocked;
     ui.phaseTwo.classList.toggle('locked', !phaseTwoUnlocked); ui.phaseTwo.classList.toggle('unlocked', phaseTwoUnlocked);
     ui.phaseTwo.setAttribute('aria-label', phaseTwoUnlocked ? 'Abrir prévia da Fase 2' : 'Fase 2 bloqueada');
-    ui.phaseTwoStatus.textContent = progress.phaseTwoPreviewCompleted ? 'TRECHO CONCLUÍDO · JOGAR NOVAMENTE' : 'TRECHO JOGÁVEL · TOQUE PARA ENTRAR';
-    ui.mapTip.textContent = progress.phaseTwoPreviewCompleted ? 'PRIMEIRO TRECHO DO ALTO-FORNO CONCLUÍDO' : 'O PRIMEIRO TRECHO DO ALTO-FORNO ESTÁ PRONTO PARA TESTE';
+    ui.phaseTwoStatus.textContent = progress.phaseTwoPreviewCompleted ? 'DOIS SETORES CONCLUÍDOS · JOGAR NOVAMENTE' : 'DOIS SETORES JOGÁVEIS · TOQUE PARA ENTRAR';
+    ui.mapTip.textContent = progress.phaseTwoPreviewCompleted ? 'ROTA DO ALTO-FORNO CONCLUÍDA' : 'A ROTA AMPLIADA DO ALTO-FORNO ESTÁ PRONTA PARA TESTE';
     const phaseTwoMark = ui.phaseTwo.querySelector('.lock-mark'); phaseTwoMark.textContent = phaseTwoUnlocked ? '▶' : '◆'; phaseTwoMark.classList.toggle('ready', phaseTwoUnlocked);
   }
 
@@ -370,9 +384,10 @@
     if (victoryClock >= 2.15) finishLevel();
   }
   function resetPhaseTwo(showText = false) {
-    player.x = 165; player.y = 568; player.vx = 0; player.vy = 0; player.grounded = true; player.frame = 0; player.facing = 1;
-    projectiles.length = 0; shootPose = 0; muzzleFlash = 0; cameraX = 0;
-    if (showText) flash('METAL LÍQUIDO — RETORNANDO AO INÍCIO', 1000);
+    player.x = phaseTwoState.checkpoint ? W + 185 : 165; player.y = phaseTwoState.checkpoint ? 590 : 568;
+    player.vx = 0; player.vy = 0; player.grounded = true; player.frame = 0; player.facing = 1;
+    projectiles.length = 0; shootPose = 0; muzzleFlash = 0; cameraX = Math.max(0, Math.min(P2_WORLD_W - W, player.x - W * .34));
+    if (showText) flash(phaseTwoState.checkpoint ? 'METAL LÍQUIDO — RETORNANDO AO CHECKPOINT' : 'METAL LÍQUIDO — RETORNANDO AO INÍCIO', 1000);
   }
   function phaseTwoFloor(prevFoot, nextFoot) {
     if (player.vy < 0) return null;
@@ -380,23 +395,24 @@
     return phaseTwoPlatforms.find(p => right > p.x1 && left < p.x2 && prevFoot <= p.y + 5 && nextFoot >= p.y);
   }
   function updatePhaseTwoHud() {
-    ui.status.textContent = `FASE 02 · ALTO-FORNO · QUEDAS ${phaseTwoState.deaths}`;
-    ui.scrap.textContent = `SUCATA ${phaseTwoState.defeats}/1`;
+    ui.status.textContent = `FASE 02 · ALTO-FORNO · SETOR ${player.x < W ? '1/2' : '2/2'} · QUEDAS ${phaseTwoState.deaths}`;
+    ui.scrap.textContent = `SUCATA ${phaseTwoState.defeats}/${phaseTwoEnemies.length}`;
     ui.score.textContent = `PONTOS ${String(phaseTwoState.points).padStart(4, '0')}`;
     ui.power.classList.add('hidden'); ui.bossHud.classList.add('hidden');
   }
   function updatePhaseTwoProjectiles(dt) {
-    phaseTwoEnemy.hitFlash = Math.max(0, phaseTwoEnemy.hitFlash - dt);
+    phaseTwoEnemies.forEach(enemy => { enemy.hitFlash = Math.max(0, enemy.hitFlash - dt); });
     for (let i = projectiles.length - 1; i >= 0; i--) {
       const shot = projectiles[i]; shot.x += shot.vx * dt; shot.y += shot.vy * dt; shot.life -= dt;
-      if (phaseTwoEnemy.alive && Math.abs(shot.x - phaseTwoEnemy.x) < 70 && shot.y > phaseTwoEnemy.y - 132 && shot.y < phaseTwoEnemy.y - 8) {
-        phaseTwoEnemy.hp--; phaseTwoEnemy.hitFlash = .16; burstAt(shot.x, shot.y); tone(320, .07, 'square', .025);
-        if (phaseTwoEnemy.hp <= 0) {
-          phaseTwoEnemy.alive = false; phaseTwoState.defeats = 1; phaseTwoState.points += 300; burstAt(phaseTwoEnemy.x, phaseTwoEnemy.y - 72); flash('SENTINELA DO ALTO-FORNO DESTRUÍDO', 850);
+      const enemy = phaseTwoEnemies.find(item => item.alive && Math.abs(shot.x - item.x) < 70 && shot.y > item.y - 132 && shot.y < item.y - 8);
+      if (enemy) {
+        enemy.hp--; enemy.hitFlash = .16; burstAt(shot.x, shot.y); tone(320, .07, 'square', .025);
+        if (enemy.hp <= 0) {
+          enemy.alive = false; phaseTwoState.defeats++; phaseTwoState.points += 300; burstAt(enemy.x, enemy.y - 72); flash('SENTINELA DO ALTO-FORNO DESTRUÍDO', 850);
         }
         projectiles.splice(i, 1); continue;
       }
-      if (shot.life <= 0 || shot.x < 0 || shot.x > W) projectiles.splice(i, 1);
+      if (shot.life <= 0 || shot.x < 0 || shot.x > P2_WORLD_W) projectiles.splice(i, 1);
     }
   }
   function finishPhaseTwo() {
@@ -405,18 +421,19 @@
     phaseTwoState.points += Math.max(0, 500 - phaseTwoState.deaths * 50);
     const progress = { ...loadProgress(), phaseTwoPreviewCompleted: true, phaseTwoBest: Math.max(loadProgress().phaseTwoBest || 0, phaseTwoState.points) };
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch (_) {}
-    ui.controls.classList.add('hidden'); ui.phaseTwoStats.textContent = `PONTOS  ${phaseTwoState.points}\nENGRENAGENS  ${phaseTwoState.collected}/${phaseTwoGears.length}\nSUCATA  ${phaseTwoState.defeats}/1\nQUEDAS  ${phaseTwoState.deaths}`;
+    ui.controls.classList.add('hidden'); ui.phaseTwoStats.textContent = `PONTOS  ${phaseTwoState.points}\nENGRENAGENS  ${phaseTwoState.collected}/${phaseTwoGears.length}\nSUCATA  ${phaseTwoState.defeats}/${phaseTwoEnemies.length}\nQUEDAS  ${phaseTwoState.deaths}`;
     updateMap(); ui.phaseTwoComplete.classList.remove('hidden');
   }
-  function updateSteamParticles(dt, active) {
-    phaseTwoState.steamSpawn -= dt;
-    if (active) {
-      while (phaseTwoState.steamSpawn <= 0) {
-        phaseTwoState.steamSpawn += .035;
+  function updateSteamParticles(dt, activeVents) {
+    phaseTwoVents.forEach(vent => { vent.spawn -= dt; });
+    activeVents.forEach(vent => {
+      while (vent.spawn <= 0) {
+        vent.spawn += .035;
         const life = .72 + Math.random() * .48;
-        steamParticles.push({ x: 1035 + (Math.random() - .5) * 38, y: 442 + Math.random() * 12, vx: (Math.random() - .5) * 62, vy: -285 - Math.random() * 165, life, maxLife: life, size: 22 + Math.random() * 27, phase: Math.random() * 6.28 });
+        steamParticles.push({ x: vent.x + (Math.random() - .5) * 38, y: vent.y + Math.random() * 12, vx: (Math.random() - .5) * 62, vy: -285 - Math.random() * 165, life, maxLife: life, size: 22 + Math.random() * 27, phase: Math.random() * 6.28 });
       }
-    } else phaseTwoState.steamSpawn = Math.max(0, phaseTwoState.steamSpawn);
+    });
+    phaseTwoVents.filter(vent => !activeVents.includes(vent)).forEach(vent => { vent.spawn = Math.max(0, vent.spawn); });
     for (let i = steamParticles.length - 1; i >= 0; i--) {
       const puff = steamParticles[i]; puff.life -= dt; puff.phase += dt * 5.5; puff.x += (puff.vx + Math.sin(puff.phase) * 24) * dt; puff.y += puff.vy * dt; puff.vy *= Math.pow(.64, dt); puff.size += dt * 48;
       if (puff.life <= 0) steamParticles.splice(i, 1);
@@ -433,7 +450,7 @@
     player.vx = Math.max(-455, Math.min(455, player.vx));
     if (keys.jump && player.grounded) { player.vy = -1120; player.grounded = false; keys.jump = false; }
     const prevFoot = player.y;
-    player.x += player.vx * dt; player.vy += 2100 * dt; player.y += player.vy * dt; player.x = Math.max(42, Math.min(W - 42, player.x));
+    player.x += player.vx * dt; player.vy += 2100 * dt; player.y += player.vy * dt; player.x = Math.max(42, Math.min(P2_WORLD_W - 42, player.x));
     const floor = phaseTwoFloor(prevFoot, player.y);
     if (floor) { player.y = floor.y; player.vy = 0; player.grounded = true; }
     else if (player.grounded) {
@@ -445,26 +462,31 @@
         item.picked = true; phaseTwoState.collected++; phaseTwoState.points += 100; burstAt(item.x, item.y); tone(820, .13, 'triangle', .045);
       }
     });
-    if (phaseTwoEnemy.alive) {
-      phaseTwoEnemy.x += phaseTwoEnemy.dir * 78 * dt;
-      if (phaseTwoEnemy.x <= phaseTwoEnemy.min) { phaseTwoEnemy.x = phaseTwoEnemy.min; phaseTwoEnemy.dir = 1; }
-      if (phaseTwoEnemy.x >= phaseTwoEnemy.max) { phaseTwoEnemy.x = phaseTwoEnemy.max; phaseTwoEnemy.dir = -1; }
-      const hit = Math.abs(player.x - phaseTwoEnemy.x) < 68 && player.y > phaseTwoEnemy.y - 126 && player.y - player.h * .84 < phaseTwoEnemy.y - 8;
+    for (const enemy of phaseTwoEnemies) {
+      if (!enemy.alive) continue;
+      enemy.x += enemy.dir * 78 * dt;
+      if (enemy.x <= enemy.min) { enemy.x = enemy.min; enemy.dir = 1; }
+      if (enemy.x >= enemy.max) { enemy.x = enemy.max; enemy.dir = -1; }
+      const hit = Math.abs(player.x - enemy.x) < 68 && player.y > enemy.y - 126 && player.y - player.h * .84 < enemy.y - 8;
       if (hit) {
-        if (player.vy > 120 && prevFoot <= phaseTwoEnemy.y - 100) {
-          phaseTwoEnemy.hp = 0; phaseTwoEnemy.alive = false; phaseTwoState.defeats = 1; phaseTwoState.points += 300; player.vy = -680; burstAt(phaseTwoEnemy.x, phaseTwoEnemy.y - 70);
-        } else { phaseTwoState.deaths++; resetPhaseTwo(); flash('ATINGIDO PELO SENTINELA — VOLTANDO AO INÍCIO', 1000); return; }
+        if (player.vy > 120 && prevFoot <= enemy.y - 100) {
+          enemy.hp = 0; enemy.alive = false; phaseTwoState.defeats++; phaseTwoState.points += 300; player.vy = -680; burstAt(enemy.x, enemy.y - 70);
+        } else { phaseTwoState.deaths++; resetPhaseTwo(); flash(phaseTwoState.checkpoint ? 'ATINGIDO — VOLTANDO AO CHECKPOINT' : 'ATINGIDO PELO SENTINELA — VOLTANDO AO INÍCIO', 1000); return; }
       }
     }
-    const steamCycle = phaseTwoState.clock % 4.8, steamWarning = steamCycle >= 2.5 && steamCycle < 3.5, steamActive = steamCycle >= 3.5 && steamCycle < 4.45;
-    updateSteamParticles(dt, steamActive);
-    updateSiren(steamWarning);
-    if (steamActive && Math.abs(player.x - 1035) < 54 && player.y > 320) { phaseTwoState.deaths++; resetPhaseTwo(); flash('ATINGIDO PELO VAPOR — VOLTANDO AO INÍCIO', 1000); return; }
+    const activeVents = phaseTwoVents.filter(vent => { const cycle = (phaseTwoState.clock + vent.phase) % 4.8; return cycle >= 3.5 && cycle < 4.45; });
+    const warningVents = phaseTwoVents.filter(vent => { const cycle = (phaseTwoState.clock + vent.phase) % 4.8; return cycle >= 2.5 && cycle < 3.5; });
+    updateSteamParticles(dt, activeVents);
+    updateSiren(warningVents.length > 0);
+    if (activeVents.some(vent => Math.abs(player.x - vent.x) < 54 && player.y > vent.y - 122)) { phaseTwoState.deaths++; resetPhaseTwo(); flash(phaseTwoState.checkpoint ? 'ATINGIDO PELO VAPOR — VOLTANDO AO CHECKPOINT' : 'ATINGIDO PELO VAPOR — VOLTANDO AO INÍCIO', 1000); return; }
     if (player.y > H + 120) { phaseTwoState.deaths++; resetPhaseTwo(true); return; }
-    if (player.x > W - 105 && player.grounded) { finishPhaseTwo(); return; }
+    if (!phaseTwoState.checkpoint && player.x > W + 165 && player.grounded) { phaseTwoState.checkpoint = true; tone(660, .18, 'triangle', .045); flash('CHECKPOINT · SETOR DE RESFRIAMENTO', 1100); }
+    if (player.x > P2_WORLD_W - 105 && player.grounded) { finishPhaseTwo(); return; }
     if (!player.grounded) player.frame = player.vy < -120 ? 5 : player.vy > 240 ? 6 : 4;
     else if (Math.abs(player.vx) > 40) { player.runClock += dt * (7 + Math.abs(player.vx) / 105); player.frame = 1 + (Math.floor(player.runClock) % 3); }
     else player.frame = 0;
+    const desiredCamera = Math.max(0, Math.min(P2_WORLD_W - W, player.x - W * .34));
+    cameraX += (desiredCamera - cameraX) * Math.min(1, dt * 4.8);
     updatePhaseTwoHud();
   }
   function update(dt) {
@@ -761,7 +783,7 @@
     phaseTwoGears.forEach((item, i) => {
       if (item.picked) return;
       const bob = Math.sin(now * .004 + i) * 7;
-      ctx.save(); ctx.translate(item.x, item.y + bob); ctx.rotate(now * .0022 + i); ctx.shadowColor = '#ff8a19'; ctx.shadowBlur = 24;
+      ctx.save(); ctx.translate(item.x - cameraX, item.y + bob); ctx.rotate(now * .0022 + i); ctx.shadowColor = '#ff8a19'; ctx.shadowBlur = 24;
       const metal = ctx.createRadialGradient(-8, -10, 3, 0, 0, 31);
       metal.addColorStop(0, '#fff1b0'); metal.addColorStop(.22, '#ffb52f'); metal.addColorStop(.58, '#9a4b06'); metal.addColorStop(1, '#2c1a10');
       ctx.fillStyle = metal; ctx.beginPath();
@@ -769,35 +791,45 @@
       ctx.closePath(); ctx.fill(); ctx.fillStyle = '#16191b'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#ffe39b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
     });
-    if (phaseTwoEnemy.alive && sentinelSprite.complete) {
-      ctx.save(); ctx.translate(phaseTwoEnemy.x, phaseTwoEnemy.y); if (phaseTwoEnemy.dir < 0) ctx.scale(-1, 1);
+    phaseTwoEnemies.forEach(enemy => {
+      if (!enemy.alive || !sentinelSprite.complete) return;
+      ctx.save(); ctx.translate(enemy.x - cameraX, enemy.y); if (enemy.dir < 0) ctx.scale(-1, 1);
       ctx.drawImage(sentinelSprite, -72, -138, 144, 138);
-      if (phaseTwoEnemy.hitFlash > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, phaseTwoEnemy.hitFlash * 5); ctx.drawImage(sentinelSprite, -72, -138, 144, 138); }
+      if (enemy.hitFlash > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, enemy.hitFlash * 5); ctx.drawImage(sentinelSprite, -72, -138, 144, 138); }
       ctx.restore();
-    }
-    const steamCycle = phaseTwoState.clock % 4.8, warning = steamCycle >= 2.5 && steamCycle < 3.5;
+    });
+    phaseTwoVents.forEach(vent => {
+      const x = vent.x - cameraX, cycle = (phaseTwoState.clock + vent.phase) % 4.8, warning = cycle >= 2.5 && cycle < 3.5;
+      if (x < -180 || x > W + 180) return;
+      ctx.save();
+      if (steamVentSprite.complete) ctx.drawImage(steamVentSprite, x - 75, vent.y - 9, 150, 135);
+      if (warning) {
+        ctx.globalCompositeOperation = 'lighter'; const pulse = .45 + Math.sin(now * .018) * .22;
+        const alarm = ctx.createRadialGradient(x + 46, vent.y + 54, 3, x + 46, vent.y + 54, 31); alarm.addColorStop(0, `rgba(255,235,120,${pulse})`); alarm.addColorStop(.35, `rgba(255,55,10,${pulse})`); alarm.addColorStop(1, 'rgba(255,30,0,0)');
+        ctx.fillStyle = alarm; ctx.beginPath(); ctx.arc(x + 46, vent.y + 54, 31, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    });
     ctx.save();
-    if (steamVentSprite.complete) ctx.drawImage(steamVentSprite, 960, 433, 150, 135);
-    if (warning) {
-      ctx.globalCompositeOperation = 'lighter'; const pulse = .45 + Math.sin(now * .018) * .22;
-      const alarm = ctx.createRadialGradient(1081, 496, 3, 1081, 496, 31); alarm.addColorStop(0, `rgba(255,235,120,${pulse})`); alarm.addColorStop(.35, `rgba(255,55,10,${pulse})`); alarm.addColorStop(1, 'rgba(255,30,0,0)');
-      ctx.fillStyle = alarm; ctx.beginPath(); ctx.arc(1081, 496, 31, 0, Math.PI * 2); ctx.fill();
-    }
     ctx.globalCompositeOperation = 'screen';
     steamParticles.forEach(puff => {
+      const x = puff.x - cameraX;
       const ratio = Math.max(0, puff.life / puff.maxLife), alpha = Math.sin(Math.min(1, (1 - ratio) * 4) * Math.PI / 2) * Math.pow(ratio, .55) * .72;
-      const cloud = ctx.createRadialGradient(puff.x - puff.size * .16, puff.y - puff.size * .14, puff.size * .08, puff.x, puff.y, puff.size);
+      const cloud = ctx.createRadialGradient(x - puff.size * .16, puff.y - puff.size * .14, puff.size * .08, x, puff.y, puff.size);
       cloud.addColorStop(0, `rgba(255,255,255,${alpha})`); cloud.addColorStop(.35, `rgba(225,240,242,${alpha * .86})`); cloud.addColorStop(.72, `rgba(180,208,214,${alpha * .35})`); cloud.addColorStop(1, 'rgba(150,190,200,0)');
-      ctx.fillStyle = cloud; ctx.beginPath(); ctx.ellipse(puff.x, puff.y, puff.size * .76, puff.size, Math.sin(puff.phase) * .2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = cloud; ctx.beginPath(); ctx.ellipse(x, puff.y, puff.size * .76, puff.size, Math.sin(puff.phase) * .2, 0, Math.PI * 2); ctx.fill();
     });
     ctx.restore();
-    ctx.save(); ctx.translate(W - 72, 470); ctx.globalCompositeOperation = 'lighter';
+    const checkpointX = W + 185 - cameraX;
+    ctx.save(); ctx.translate(checkpointX, 480); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = phaseTwoState.checkpoint ? 'rgba(78,255,178,.75)' : 'rgba(255,151,35,.6)'; ctx.fillRect(-5, -88, 10, 88); ctx.beginPath(); ctx.arc(0, -88, 19, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(P2_WORLD_W - 72 - cameraX, 492); ctx.globalCompositeOperation = 'lighter';
     const beacon = ctx.createRadialGradient(0, 0, 4, 0, 0, 54); beacon.addColorStop(0, '#d8ffff'); beacon.addColorStop(.25, '#51d9ff'); beacon.addColorStop(1, 'rgba(20,120,255,0)'); ctx.fillStyle = beacon; ctx.beginPath(); ctx.arc(0, 0, 54, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   }
   function drawPhaseTwoScene() {
     ctx.fillStyle = '#050607'; ctx.fillRect(0, 0, W, H);
     ctx.save(); if (shake) ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake * .55);
-    if (phaseTwoBackground.complete) ctx.drawImage(phaseTwoBackground, 0, 0, W, H);
+    if (phaseTwoBackground.complete) ctx.drawImage(phaseTwoBackground, -cameraX, 0, W, H);
+    if (phaseTwoBackground2.complete) ctx.drawImage(phaseTwoBackground2, W - cameraX, 0, W, H);
     drawAtmosphere(); drawPhaseTwoObjects(); drawProjectiles();
     if (heroSheet.complete) { drawHero(); drawWeapon(); }
     const heat = ctx.createLinearGradient(0, H, 0, 420); heat.addColorStop(0, 'rgba(255,70,0,.12)'); heat.addColorStop(1, 'rgba(255,70,0,0)'); ctx.fillStyle = heat; ctx.fillRect(0, 380, W, H - 380);
@@ -881,9 +913,10 @@
     flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
   }
   function startPhaseTwo() {
-    phaseTwoState.playing = true; phaseTwoState.won = false; phaseTwoState.deaths = 0; phaseTwoState.collected = 0; phaseTwoState.defeats = 0; phaseTwoState.points = 0; phaseTwoState.clock = 0; phaseTwoState.steamSpawn = 0;
+    phaseTwoState.playing = true; phaseTwoState.won = false; phaseTwoState.deaths = 0; phaseTwoState.collected = 0; phaseTwoState.defeats = 0; phaseTwoState.points = 0; phaseTwoState.clock = 0; phaseTwoState.checkpoint = false;
     phaseTwoGears.forEach(item => { item.picked = false; });
-    phaseTwoEnemy.x = phaseTwoEnemy.startX; phaseTwoEnemy.dir = 1; phaseTwoEnemy.hp = 2; phaseTwoEnemy.alive = true; phaseTwoEnemy.hitFlash = 0;
+    phaseTwoEnemies.forEach(enemy => { enemy.x = enemy.startX; enemy.dir = enemy.startDir; enemy.hp = 2; enemy.alive = true; enemy.hitFlash = 0; });
+    phaseTwoVents.forEach(vent => { vent.spawn = 0; });
     projectiles.length = 0; powerups.length = 0; steamParticles.length = 0; shootCooldown = 0; magnetTimer = 0; spreadTimer = 0; keys.attack = false;
     ui.preview.classList.add('hidden'); ui.phaseTwoComplete.classList.add('hidden'); ui.result.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
     paused = false; playing = true; won = false; resetPhaseTwo(); updatePhaseTwoHud(); setAudioLevel(); flash('FASE 2 · ATRAVESSE O ALTO-FORNO', 1500);
