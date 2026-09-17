@@ -22,9 +22,9 @@ jobs:
       - name: Compilar APK
         run: gradle assembleDebug
       - name: Renomear APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk Forja-de-Aco-Plataforma-v13.0.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk Forja-de-Aco-Plataforma-v14.0.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Forja-de-Aco-Plataforma-V13.0-APK
-          path: Forja-de-Aco-Plataforma-v13.0.apk
+          name: Forja-de-Aco-Plataforma-V14.0-APK
+          path: Forja-de-Aco-Plataforma-v14.0.apk
           retention-days: 30
