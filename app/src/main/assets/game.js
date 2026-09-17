@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const W = 1672, H = 941, WORLD_W = W * 7, P2_WORLD_W = W * 2;
+  const W = 1672, H = 941, WORLD_W = W * 7, P2_WORLD_W = W * 3;
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
   ctx.imageSmoothingEnabled = true;
@@ -31,10 +31,11 @@
   const bossSprite = new Image();
   const phaseTwoBackground = new Image();
   const phaseTwoBackground2 = new Image();
+  const phaseTwoBackground3 = new Image();
   const steamVentSprite = new Image();
   let loaded = 0;
   const ready = () => {
-    if (++loaded === backgrounds.length + 9) setTimeout(() => {
+    if (++loaded === backgrounds.length + 10) setTimeout(() => {
       ui.loading.classList.add('hidden'); ui.map.classList.remove('hidden'); updateMap(); draw();
     }, 650);
   };
@@ -47,6 +48,7 @@
   bossSprite.onload = ready; bossSprite.src = 'art/forge_guardian.webp';
   phaseTwoBackground.onload = ready; phaseTwoBackground.src = 'art/blast_furnace_preview.webp';
   phaseTwoBackground2.onload = ready; phaseTwoBackground2.src = 'art/blast_furnace_02.webp';
+  phaseTwoBackground3.onload = ready; phaseTwoBackground3.src = 'art/blast_furnace_03.webp';
   steamVentSprite.onload = ready; steamVentSprite.src = 'art/steam_vent.webp';
 
   // Every collider follows a visible steel surface in one of the seven background panels.
@@ -95,20 +97,25 @@
   const player = { x: spawn.x, y: spawn.y, vx: 0, vy: 0, w: 88, h: 210, grounded: true, facing: 1, frame: 0, runClock: 0 };
   const phaseTwoPlatforms = [
     { x1: 0, x2: 420, y: 568 }, { x1: 565, x2: 1175, y: 568 }, { x1: 1305, x2: W, y: 568 },
-    { x1: W, x2: W + 470, y: 590 }, { x1: W + 610, x2: W + 1120, y: 590 }, { x1: W + 1245, x2: P2_WORLD_W, y: 590 },
-    { x1: W + 760, x2: W + 1040, y: 335 }
+    { x1: W, x2: W + 470, y: 590 }, { x1: W + 610, x2: W + 1120, y: 590 }, { x1: W + 1245, x2: W * 2, y: 590 },
+    { x1: W + 760, x2: W + 1040, y: 335 },
+    { x1: W * 2, x2: W * 2 + 470, y: 590 }, { x1: W * 2 + 1030, x2: P2_WORLD_W, y: 590 },
+    { x1: W * 2 + 1135, x2: W * 2 + 1530, y: 320 }
   ];
   const phaseTwoGears = [
     { x: 245, y: 480 }, { x: 690, y: 480 }, { x: 910, y: 420 }, { x: 1115, y: 480 }, { x: 1450, y: 480 },
-    { x: W + 220, y: 500 }, { x: W + 690, y: 500 }, { x: W + 815, y: 270 }, { x: W + 985, y: 270 }, { x: W + 1070, y: 500 }, { x: W + 1460, y: 500 }
+    { x: W + 220, y: 500 }, { x: W + 690, y: 500 }, { x: W + 815, y: 270 }, { x: W + 985, y: 270 }, { x: W + 1070, y: 500 }, { x: W + 1460, y: 500 },
+    { x: W * 2 + 235, y: 500 }, { x: W * 2 + 690, y: 405 }, { x: W * 2 + 1110, y: 500 }, { x: W * 2 + 1240, y: 240 }, { x: W * 2 + 1450, y: 240 }, { x: W * 2 + 1570, y: 500 }
   ].map(item => ({ ...item, picked: false }));
   const phaseTwoEnemies = [
     { x: 820, min: 680, max: 1080, y: 568, dir: 1 },
-    { x: W + 790, min: W + 680, max: W + 1060, y: 590, dir: -1 }
+    { x: W + 790, min: W + 680, max: W + 1060, y: 590, dir: -1 },
+    { x: W * 2 + 1260, min: W * 2 + 1110, max: W * 2 + 1535, y: 590, dir: 1 }
   ];
   phaseTwoEnemies.forEach(enemy => { enemy.startX = enemy.x; enemy.startDir = enemy.dir; enemy.hp = 2; enemy.alive = true; enemy.hitFlash = 0; });
-  const phaseTwoVents = [{ x: 1035, y: 442, phase: 0, spawn: 0 }, { x: W + 1375, y: 464, phase: 2.35, spawn: 0 }];
-  const phaseTwoState = { playing: false, won: false, deaths: 0, collected: 0, defeats: 0, points: 0, clock: 0, checkpoint: false };
+  const phaseTwoVents = [{ x: 1035, y: 442, phase: 0, spawn: 0 }, { x: W + 1375, y: 464, phase: 2.35, spawn: 0 }, { x: W * 2 + 1450, y: 464, phase: 1.15, spawn: 0 }];
+  const phaseTwoLift = { x: W * 2 + 500, y: 500, w: 220, min: W * 2 + 500, max: W * 2 + 920, dir: 1, dx: 0 };
+  const phaseTwoState = { playing: false, won: false, deaths: 0, collected: 0, defeats: 0, points: 0, clock: 0, checkpoint: 0 };
   const keys = { left: false, right: false, jump: false, attack: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
     x: (i * 431) % WORLD_W, y: 260 + (i * 83) % 310, vx: 15 + (i % 5) * 9,
@@ -141,8 +148,8 @@
     ui.phaseTwo.disabled = !phaseTwoUnlocked;
     ui.phaseTwo.classList.toggle('locked', !phaseTwoUnlocked); ui.phaseTwo.classList.toggle('unlocked', phaseTwoUnlocked);
     ui.phaseTwo.setAttribute('aria-label', phaseTwoUnlocked ? 'Abrir prévia da Fase 2' : 'Fase 2 bloqueada');
-    ui.phaseTwoStatus.textContent = progress.phaseTwoPreviewCompleted ? 'DOIS SETORES CONCLUÍDOS · JOGAR NOVAMENTE' : 'DOIS SETORES JOGÁVEIS · TOQUE PARA ENTRAR';
-    ui.mapTip.textContent = progress.phaseTwoPreviewCompleted ? 'ROTA DO ALTO-FORNO CONCLUÍDA' : 'A ROTA AMPLIADA DO ALTO-FORNO ESTÁ PRONTA PARA TESTE';
+    ui.phaseTwoStatus.textContent = progress.phaseTwoPreviewCompleted ? 'TRÊS SETORES CONCLUÍDOS · JOGAR NOVAMENTE' : 'TRÊS SETORES JOGÁVEIS · TOQUE PARA ENTRAR';
+    ui.mapTip.textContent = progress.phaseTwoPreviewCompleted ? 'ROTA COMPLETA DO ALTO-FORNO CONCLUÍDA' : 'A LAMINAÇÃO DO ALTO-FORNO ESTÁ PRONTA PARA TESTE';
     const phaseTwoMark = ui.phaseTwo.querySelector('.lock-mark'); phaseTwoMark.textContent = phaseTwoUnlocked ? '▶' : '◆'; phaseTwoMark.classList.toggle('ready', phaseTwoUnlocked);
   }
 
@@ -384,7 +391,8 @@
     if (victoryClock >= 2.15) finishLevel();
   }
   function resetPhaseTwo(showText = false) {
-    player.x = phaseTwoState.checkpoint ? W + 185 : 165; player.y = phaseTwoState.checkpoint ? 590 : 568;
+    player.x = phaseTwoState.checkpoint === 2 ? W * 2 + 185 : phaseTwoState.checkpoint === 1 ? W + 185 : 165;
+    player.y = phaseTwoState.checkpoint ? 590 : 568;
     player.vx = 0; player.vy = 0; player.grounded = true; player.frame = 0; player.facing = 1;
     projectiles.length = 0; shootPose = 0; muzzleFlash = 0; cameraX = Math.max(0, Math.min(P2_WORLD_W - W, player.x - W * .34));
     if (showText) flash(phaseTwoState.checkpoint ? 'METAL LÍQUIDO — RETORNANDO AO CHECKPOINT' : 'METAL LÍQUIDO — RETORNANDO AO INÍCIO', 1000);
@@ -392,10 +400,12 @@
   function phaseTwoFloor(prevFoot, nextFoot) {
     if (player.vy < 0) return null;
     const left = player.x - player.w * .3, right = player.x + player.w * .3;
+    const liftLeft = phaseTwoLift.x - phaseTwoLift.w / 2, liftRight = phaseTwoLift.x + phaseTwoLift.w / 2;
+    if (right > liftLeft && left < liftRight && prevFoot <= phaseTwoLift.y + 6 && nextFoot >= phaseTwoLift.y) return { x1: liftLeft, x2: liftRight, y: phaseTwoLift.y, moving: true };
     return phaseTwoPlatforms.find(p => right > p.x1 && left < p.x2 && prevFoot <= p.y + 5 && nextFoot >= p.y);
   }
   function updatePhaseTwoHud() {
-    ui.status.textContent = `FASE 02 · ALTO-FORNO · SETOR ${player.x < W ? '1/2' : '2/2'} · QUEDAS ${phaseTwoState.deaths}`;
+    ui.status.textContent = `FASE 02 · ALTO-FORNO · SETOR ${Math.min(3, Math.floor(player.x / W) + 1)}/3 · QUEDAS ${phaseTwoState.deaths}`;
     ui.scrap.textContent = `SUCATA ${phaseTwoState.defeats}/${phaseTwoEnemies.length}`;
     ui.score.textContent = `PONTOS ${String(phaseTwoState.points).padStart(4, '0')}`;
     ui.power.classList.add('hidden'); ui.bossHud.classList.add('hidden');
@@ -448,13 +458,21 @@
     const accel = player.grounded ? 2750 : 1750, target = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
     if (target) { player.vx += target * accel * dt; player.facing = target; } else player.vx *= Math.pow(player.grounded ? .0006 : .07, dt);
     player.vx = Math.max(-455, Math.min(455, player.vx));
+    const ridingLift = player.grounded && Math.abs(player.y - phaseTwoLift.y) < 8 && player.x > phaseTwoLift.x - phaseTwoLift.w / 2 - 24 && player.x < phaseTwoLift.x + phaseTwoLift.w / 2 + 24;
+    const previousLiftX = phaseTwoLift.x;
+    phaseTwoLift.x += phaseTwoLift.dir * 125 * dt;
+    if (phaseTwoLift.x <= phaseTwoLift.min) { phaseTwoLift.x = phaseTwoLift.min; phaseTwoLift.dir = 1; }
+    if (phaseTwoLift.x >= phaseTwoLift.max) { phaseTwoLift.x = phaseTwoLift.max; phaseTwoLift.dir = -1; }
+    phaseTwoLift.dx = phaseTwoLift.x - previousLiftX;
+    if (ridingLift) player.x += phaseTwoLift.dx;
     if (keys.jump && player.grounded) { player.vy = -1120; player.grounded = false; keys.jump = false; }
     const prevFoot = player.y;
     player.x += player.vx * dt; player.vy += 2100 * dt; player.y += player.vy * dt; player.x = Math.max(42, Math.min(P2_WORLD_W - 42, player.x));
     const floor = phaseTwoFloor(prevFoot, player.y);
     if (floor) { player.y = floor.y; player.vy = 0; player.grounded = true; }
     else if (player.grounded) {
-      const supported = phaseTwoPlatforms.some(p => player.x + player.w * .27 > p.x1 && player.x - player.w * .27 < p.x2 && Math.abs(player.y - p.y) < 8);
+      const onLift = player.x + player.w * .27 > phaseTwoLift.x - phaseTwoLift.w / 2 && player.x - player.w * .27 < phaseTwoLift.x + phaseTwoLift.w / 2 && Math.abs(player.y - phaseTwoLift.y) < 8;
+      const supported = onLift || phaseTwoPlatforms.some(p => player.x + player.w * .27 > p.x1 && player.x - player.w * .27 < p.x2 && Math.abs(player.y - p.y) < 8);
       if (!supported) player.grounded = false;
     }
     phaseTwoGears.forEach(item => {
@@ -480,7 +498,8 @@
     updateSiren(warningVents.length > 0);
     if (activeVents.some(vent => Math.abs(player.x - vent.x) < 54 && player.y > vent.y - 122)) { phaseTwoState.deaths++; resetPhaseTwo(); flash(phaseTwoState.checkpoint ? 'ATINGIDO PELO VAPOR — VOLTANDO AO CHECKPOINT' : 'ATINGIDO PELO VAPOR — VOLTANDO AO INÍCIO', 1000); return; }
     if (player.y > H + 120) { phaseTwoState.deaths++; resetPhaseTwo(true); return; }
-    if (!phaseTwoState.checkpoint && player.x > W + 165 && player.grounded) { phaseTwoState.checkpoint = true; tone(660, .18, 'triangle', .045); flash('CHECKPOINT · SETOR DE RESFRIAMENTO', 1100); }
+    if (phaseTwoState.checkpoint < 1 && player.x > W + 165 && player.grounded) { phaseTwoState.checkpoint = 1; tone(660, .18, 'triangle', .045); flash('CHECKPOINT · SETOR DE RESFRIAMENTO', 1100); }
+    if (phaseTwoState.checkpoint < 2 && player.x > W * 2 + 165 && player.grounded) { phaseTwoState.checkpoint = 2; tone(720, .2, 'triangle', .05); flash('CHECKPOINT · LAMINAÇÃO', 1100); }
     if (player.x > P2_WORLD_W - 105 && player.grounded) { finishPhaseTwo(); return; }
     if (!player.grounded) player.frame = player.vy < -120 ? 5 : player.vy > 240 ? 6 : 4;
     else if (Math.abs(player.vx) > 40) { player.runClock += dt * (7 + Math.abs(player.vx) / 105); player.frame = 1 + (Math.floor(player.runClock) % 3); }
@@ -780,6 +799,17 @@
   }
   function drawPhaseTwoObjects() {
     const now = performance.now();
+    const liftX = phaseTwoLift.x - cameraX, liftY = phaseTwoLift.y;
+    if (liftX > -180 && liftX < W + 180) {
+      ctx.save(); ctx.translate(liftX, liftY);
+      ctx.shadowColor = 'rgba(65,210,255,.7)'; ctx.shadowBlur = 22;
+      const liftSteel = ctx.createLinearGradient(0, -28, 0, 20); liftSteel.addColorStop(0, '#d4dde0'); liftSteel.addColorStop(.18, '#566267'); liftSteel.addColorStop(.52, '#171c1f'); liftSteel.addColorStop(1, '#050708');
+      ctx.fillStyle = liftSteel; ctx.beginPath(); ctx.roundRect(-phaseTwoLift.w / 2, -27, phaseTwoLift.w, 45, 8); ctx.fill();
+      ctx.shadowBlur = 0; ctx.strokeStyle = '#060708'; ctx.lineWidth = 5; ctx.stroke();
+      ctx.fillStyle = '#f08b16'; for (let stripe = -96; stripe < 100; stripe += 42) { ctx.beginPath(); ctx.moveTo(stripe, -25); ctx.lineTo(stripe + 22, -25); ctx.lineTo(stripe + 8, -9); ctx.lineTo(stripe - 14, -9); ctx.closePath(); ctx.fill(); }
+      ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#59dcff'; ctx.fillRect(-70, 7, 42, 6); ctx.fillRect(28, 7, 42, 6);
+      ctx.restore();
+    }
     phaseTwoGears.forEach((item, i) => {
       if (item.picked) return;
       const bob = Math.sin(now * .004 + i) * 7;
@@ -820,8 +850,10 @@
       ctx.fillStyle = cloud; ctx.beginPath(); ctx.ellipse(x, puff.y, puff.size * .76, puff.size, Math.sin(puff.phase) * .2, 0, Math.PI * 2); ctx.fill();
     });
     ctx.restore();
-    const checkpointX = W + 185 - cameraX;
-    ctx.save(); ctx.translate(checkpointX, 480); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = phaseTwoState.checkpoint ? 'rgba(78,255,178,.75)' : 'rgba(255,151,35,.6)'; ctx.fillRect(-5, -88, 10, 88); ctx.beginPath(); ctx.arc(0, -88, 19, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    [W + 185, W * 2 + 185].forEach((worldX, index) => {
+      const checkpointX = worldX - cameraX; if (checkpointX < -80 || checkpointX > W + 80) return;
+      ctx.save(); ctx.translate(checkpointX, 502); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = phaseTwoState.checkpoint >= index + 1 ? 'rgba(78,255,178,.75)' : 'rgba(255,151,35,.6)'; ctx.fillRect(-5, -88, 10, 88); ctx.beginPath(); ctx.arc(0, -88, 19, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    });
     ctx.save(); ctx.translate(P2_WORLD_W - 72 - cameraX, 492); ctx.globalCompositeOperation = 'lighter';
     const beacon = ctx.createRadialGradient(0, 0, 4, 0, 0, 54); beacon.addColorStop(0, '#d8ffff'); beacon.addColorStop(.25, '#51d9ff'); beacon.addColorStop(1, 'rgba(20,120,255,0)'); ctx.fillStyle = beacon; ctx.beginPath(); ctx.arc(0, 0, 54, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   }
@@ -830,6 +862,7 @@
     ctx.save(); if (shake) ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake * .55);
     if (phaseTwoBackground.complete) ctx.drawImage(phaseTwoBackground, -cameraX, 0, W, H);
     if (phaseTwoBackground2.complete) ctx.drawImage(phaseTwoBackground2, W - cameraX, 0, W, H);
+    if (phaseTwoBackground3.complete) ctx.drawImage(phaseTwoBackground3, W * 2 - cameraX, 0, W, H);
     drawAtmosphere(); drawPhaseTwoObjects(); drawProjectiles();
     if (heroSheet.complete) { drawHero(); drawWeapon(); }
     const heat = ctx.createLinearGradient(0, H, 0, 420); heat.addColorStop(0, 'rgba(255,70,0,.12)'); heat.addColorStop(1, 'rgba(255,70,0,0)'); ctx.fillStyle = heat; ctx.fillRect(0, 380, W, H - 380);
@@ -913,10 +946,11 @@
     flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
   }
   function startPhaseTwo() {
-    phaseTwoState.playing = true; phaseTwoState.won = false; phaseTwoState.deaths = 0; phaseTwoState.collected = 0; phaseTwoState.defeats = 0; phaseTwoState.points = 0; phaseTwoState.clock = 0; phaseTwoState.checkpoint = false;
+    phaseTwoState.playing = true; phaseTwoState.won = false; phaseTwoState.deaths = 0; phaseTwoState.collected = 0; phaseTwoState.defeats = 0; phaseTwoState.points = 0; phaseTwoState.clock = 0; phaseTwoState.checkpoint = 0;
     phaseTwoGears.forEach(item => { item.picked = false; });
     phaseTwoEnemies.forEach(enemy => { enemy.x = enemy.startX; enemy.dir = enemy.startDir; enemy.hp = 2; enemy.alive = true; enemy.hitFlash = 0; });
     phaseTwoVents.forEach(vent => { vent.spawn = 0; });
+    phaseTwoLift.x = phaseTwoLift.min; phaseTwoLift.dir = 1; phaseTwoLift.dx = 0;
     projectiles.length = 0; powerups.length = 0; steamParticles.length = 0; shootCooldown = 0; magnetTimer = 0; spreadTimer = 0; keys.attack = false;
     ui.preview.classList.add('hidden'); ui.phaseTwoComplete.classList.add('hidden'); ui.result.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
     paused = false; playing = true; won = false; resetPhaseTwo(); updatePhaseTwoHud(); setAudioLevel(); flash('FASE 2 · ATRAVESSE O ALTO-FORNO', 1500);
