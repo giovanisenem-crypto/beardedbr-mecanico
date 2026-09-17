@@ -30,9 +30,10 @@
   const crateSprite = new Image();
   const bossSprite = new Image();
   const phaseTwoBackground = new Image();
+  const steamVentSprite = new Image();
   let loaded = 0;
   const ready = () => {
-    if (++loaded === backgrounds.length + 7) setTimeout(() => {
+    if (++loaded === backgrounds.length + 8) setTimeout(() => {
       ui.loading.classList.add('hidden'); ui.map.classList.remove('hidden'); updateMap(); draw();
     }, 650);
   };
@@ -44,6 +45,7 @@
   crateSprite.onload = ready; crateSprite.src = 'art/supply_crate.webp';
   bossSprite.onload = ready; bossSprite.src = 'art/forge_guardian.webp';
   phaseTwoBackground.onload = ready; phaseTwoBackground.src = 'art/blast_furnace_preview.webp';
+  steamVentSprite.onload = ready; steamVentSprite.src = 'art/steam_vent.webp';
 
   // Every collider follows a visible steel surface in one of the seven background panels.
   const platforms = [
@@ -92,7 +94,7 @@
   const phaseTwoPlatforms = [{ x1: 0, x2: 420, y: 568 }, { x1: 565, x2: 1175, y: 568 }, { x1: 1305, x2: W, y: 568 }];
   const phaseTwoGears = [{ x: 245, y: 480 }, { x: 690, y: 480 }, { x: 910, y: 420 }, { x: 1115, y: 480 }, { x: 1450, y: 480 }].map(item => ({ ...item, picked: false }));
   const phaseTwoEnemy = { x: 820, startX: 820, min: 680, max: 1080, y: 568, dir: 1, hp: 2, alive: true, hitFlash: 0 };
-  const phaseTwoState = { playing: false, won: false, deaths: 0, collected: 0, defeats: 0, points: 0, clock: 0 };
+  const phaseTwoState = { playing: false, won: false, deaths: 0, collected: 0, defeats: 0, points: 0, clock: 0, steamSpawn: 0 };
   const keys = { left: false, right: false, jump: false, attack: false };
   const sparks = Array.from({ length: 54 }, (_, i) => ({
     x: (i * 431) % WORLD_W, y: 260 + (i * 83) % 310, vx: 15 + (i % 5) * 9,
@@ -101,7 +103,7 @@
   const smoke = Array.from({ length: 22 }, (_, i) => ({
     x: (i * 617 + 300) % WORLD_W, y: 510 - (i % 4) * 48, phase: i * .7, size: 65 + (i % 4) * 24
   }));
-  const bursts = [], projectiles = [], powerups = [], bossShots = [];
+  const bursts = [], projectiles = [], powerups = [], bossShots = [], steamParticles = [];
   let playing = false, paused = false, last = 0, deaths = 0, defeats = 0, collected = 0, points = 0, won = false, cameraX = 0, checkpointIndex = -1;
   let pressClock = 0, shake = 0, audioContext = null, sirenOscillator = null, sirenGain = null;
   let musicGain = null, musicTimer = null, musicStep = 0, soundEnabled = true;
@@ -406,6 +408,20 @@
     ui.controls.classList.add('hidden'); ui.phaseTwoStats.textContent = `PONTOS  ${phaseTwoState.points}\nENGRENAGENS  ${phaseTwoState.collected}/${phaseTwoGears.length}\nSUCATA  ${phaseTwoState.defeats}/1\nQUEDAS  ${phaseTwoState.deaths}`;
     updateMap(); ui.phaseTwoComplete.classList.remove('hidden');
   }
+  function updateSteamParticles(dt, active) {
+    phaseTwoState.steamSpawn -= dt;
+    if (active) {
+      while (phaseTwoState.steamSpawn <= 0) {
+        phaseTwoState.steamSpawn += .035;
+        const life = .72 + Math.random() * .48;
+        steamParticles.push({ x: 1035 + (Math.random() - .5) * 38, y: 442 + Math.random() * 12, vx: (Math.random() - .5) * 62, vy: -285 - Math.random() * 165, life, maxLife: life, size: 22 + Math.random() * 27, phase: Math.random() * 6.28 });
+      }
+    } else phaseTwoState.steamSpawn = Math.max(0, phaseTwoState.steamSpawn);
+    for (let i = steamParticles.length - 1; i >= 0; i--) {
+      const puff = steamParticles[i]; puff.life -= dt; puff.phase += dt * 5.5; puff.x += (puff.vx + Math.sin(puff.phase) * 24) * dt; puff.y += puff.vy * dt; puff.vy *= Math.pow(.64, dt); puff.size += dt * 48;
+      if (puff.life <= 0) steamParticles.splice(i, 1);
+    }
+  }
   function updatePhaseTwo(dt) {
     if (paused || phaseTwoState.won) return;
     phaseTwoState.clock += dt; shootPose = Math.max(0, shootPose - dt); muzzleFlash = Math.max(0, muzzleFlash - dt); shootCooldown = Math.max(0, shootCooldown - dt);
@@ -441,6 +457,7 @@
       }
     }
     const steamCycle = phaseTwoState.clock % 4.8, steamWarning = steamCycle >= 2.5 && steamCycle < 3.5, steamActive = steamCycle >= 3.5 && steamCycle < 4.45;
+    updateSteamParticles(dt, steamActive);
     updateSiren(steamWarning);
     if (steamActive && Math.abs(player.x - 1035) < 54 && player.y > 320) { phaseTwoState.deaths++; resetPhaseTwo(); flash('ATINGIDO PELO VAPOR — VOLTANDO AO INÍCIO', 1000); return; }
     if (player.y > H + 120) { phaseTwoState.deaths++; resetPhaseTwo(true); return; }
@@ -744,10 +761,13 @@
     phaseTwoGears.forEach((item, i) => {
       if (item.picked) return;
       const bob = Math.sin(now * .004 + i) * 7;
-      ctx.save(); ctx.translate(item.x, item.y + bob); ctx.rotate(now * .0022 + i); ctx.shadowColor = '#ff8a19'; ctx.shadowBlur = 22;
-      ctx.fillStyle = '#f49a25'; ctx.beginPath();
-      for (let n = 0; n < 24; n++) { const radius = n % 3 === 0 ? 30 : 23, angle = n / 24 * Math.PI * 2; const px = Math.cos(angle) * radius, py = Math.sin(angle) * radius; if (!n) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
-      ctx.closePath(); ctx.fill(); ctx.fillStyle = '#17191a'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(item.x, item.y + bob); ctx.rotate(now * .0022 + i); ctx.shadowColor = '#ff8a19'; ctx.shadowBlur = 24;
+      const metal = ctx.createRadialGradient(-8, -10, 3, 0, 0, 31);
+      metal.addColorStop(0, '#fff1b0'); metal.addColorStop(.22, '#ffb52f'); metal.addColorStop(.58, '#9a4b06'); metal.addColorStop(1, '#2c1a10');
+      ctx.fillStyle = metal; ctx.beginPath();
+      for (let n = 0; n < 24; n++) { const radius = n % 3 === 0 ? 31 : 24, angle = n / 24 * Math.PI * 2; const px = Math.cos(angle) * radius, py = Math.sin(angle) * radius; if (!n) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+      ctx.closePath(); ctx.fill(); ctx.fillStyle = '#16191b'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#ffe39b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
     });
     if (phaseTwoEnemy.alive && sentinelSprite.complete) {
       ctx.save(); ctx.translate(phaseTwoEnemy.x, phaseTwoEnemy.y); if (phaseTwoEnemy.dir < 0) ctx.scale(-1, 1);
@@ -755,14 +775,21 @@
       if (phaseTwoEnemy.hitFlash > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, phaseTwoEnemy.hitFlash * 5); ctx.drawImage(sentinelSprite, -72, -138, 144, 138); }
       ctx.restore();
     }
-    const steamCycle = phaseTwoState.clock % 4.8, warning = steamCycle >= 2.5 && steamCycle < 3.5, active = steamCycle >= 3.5 && steamCycle < 4.45;
-    ctx.save(); ctx.translate(1035, 568);
-    ctx.fillStyle = '#24292b'; ctx.fillRect(-42, -28, 84, 28); ctx.strokeStyle = '#9b671f'; ctx.lineWidth = 5; ctx.strokeRect(-42, -28, 84, 28);
-    if (warning) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,92,15,${.45 + Math.sin(now * .015) * .2})`; ctx.beginPath(); ctx.arc(0, -42, 22, 0, Math.PI * 2); ctx.fill(); }
-    if (active) {
-      const jet = ctx.createLinearGradient(0, -35, 0, -285); jet.addColorStop(0, 'rgba(255,255,240,.86)'); jet.addColorStop(.38, 'rgba(180,226,235,.58)'); jet.addColorStop(1, 'rgba(170,220,235,0)');
-      ctx.fillStyle = jet; ctx.beginPath(); ctx.moveTo(-28, -28); ctx.quadraticCurveTo(-54, -155, -19, -292); ctx.lineTo(22, -292); ctx.quadraticCurveTo(50, -155, 28, -28); ctx.closePath(); ctx.fill();
+    const steamCycle = phaseTwoState.clock % 4.8, warning = steamCycle >= 2.5 && steamCycle < 3.5;
+    ctx.save();
+    if (steamVentSprite.complete) ctx.drawImage(steamVentSprite, 960, 433, 150, 135);
+    if (warning) {
+      ctx.globalCompositeOperation = 'lighter'; const pulse = .45 + Math.sin(now * .018) * .22;
+      const alarm = ctx.createRadialGradient(1081, 496, 3, 1081, 496, 31); alarm.addColorStop(0, `rgba(255,235,120,${pulse})`); alarm.addColorStop(.35, `rgba(255,55,10,${pulse})`); alarm.addColorStop(1, 'rgba(255,30,0,0)');
+      ctx.fillStyle = alarm; ctx.beginPath(); ctx.arc(1081, 496, 31, 0, Math.PI * 2); ctx.fill();
     }
+    ctx.globalCompositeOperation = 'screen';
+    steamParticles.forEach(puff => {
+      const ratio = Math.max(0, puff.life / puff.maxLife), alpha = Math.sin(Math.min(1, (1 - ratio) * 4) * Math.PI / 2) * Math.pow(ratio, .55) * .72;
+      const cloud = ctx.createRadialGradient(puff.x - puff.size * .16, puff.y - puff.size * .14, puff.size * .08, puff.x, puff.y, puff.size);
+      cloud.addColorStop(0, `rgba(255,255,255,${alpha})`); cloud.addColorStop(.35, `rgba(225,240,242,${alpha * .86})`); cloud.addColorStop(.72, `rgba(180,208,214,${alpha * .35})`); cloud.addColorStop(1, 'rgba(150,190,200,0)');
+      ctx.fillStyle = cloud; ctx.beginPath(); ctx.ellipse(puff.x, puff.y, puff.size * .76, puff.size, Math.sin(puff.phase) * .2, 0, Math.PI * 2); ctx.fill();
+    });
     ctx.restore();
     ctx.save(); ctx.translate(W - 72, 470); ctx.globalCompositeOperation = 'lighter';
     const beacon = ctx.createRadialGradient(0, 0, 4, 0, 0, 54); beacon.addColorStop(0, '#d8ffff'); beacon.addColorStop(.25, '#51d9ff'); beacon.addColorStop(1, 'rgba(20,120,255,0)'); ctx.fillStyle = beacon; ctx.beginPath(); ctx.arc(0, 0, 54, 0, Math.PI * 2); ctx.fill(); ctx.restore();
@@ -854,10 +881,10 @@
     flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
   }
   function startPhaseTwo() {
-    phaseTwoState.playing = true; phaseTwoState.won = false; phaseTwoState.deaths = 0; phaseTwoState.collected = 0; phaseTwoState.defeats = 0; phaseTwoState.points = 0; phaseTwoState.clock = 0;
+    phaseTwoState.playing = true; phaseTwoState.won = false; phaseTwoState.deaths = 0; phaseTwoState.collected = 0; phaseTwoState.defeats = 0; phaseTwoState.points = 0; phaseTwoState.clock = 0; phaseTwoState.steamSpawn = 0;
     phaseTwoGears.forEach(item => { item.picked = false; });
     phaseTwoEnemy.x = phaseTwoEnemy.startX; phaseTwoEnemy.dir = 1; phaseTwoEnemy.hp = 2; phaseTwoEnemy.alive = true; phaseTwoEnemy.hitFlash = 0;
-    projectiles.length = 0; powerups.length = 0; shootCooldown = 0; magnetTimer = 0; spreadTimer = 0; keys.attack = false;
+    projectiles.length = 0; powerups.length = 0; steamParticles.length = 0; shootCooldown = 0; magnetTimer = 0; spreadTimer = 0; keys.attack = false;
     ui.preview.classList.add('hidden'); ui.phaseTwoComplete.classList.add('hidden'); ui.result.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
     paused = false; playing = true; won = false; resetPhaseTwo(); updatePhaseTwoHud(); setAudioLevel(); flash('FASE 2 · ATRAVESSE O ALTO-FORNO', 1500);
   }
