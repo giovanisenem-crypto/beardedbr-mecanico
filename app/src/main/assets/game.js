@@ -6,7 +6,7 @@
   ctx.imageSmoothingEnabled = true;
 
   const ui = {
-    loading: document.querySelector('#loading'), map: document.querySelector('#stage-map'), intro: document.querySelector('#intro'),
+    loading: document.querySelector('#loading'), map: document.querySelector('#stage-map'), preview: document.querySelector('#phase-two-preview'), intro: document.querySelector('#intro'),
     hud: document.querySelector('#hud'), controls: document.querySelector('#controls'),
     status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), score: document.querySelector('#score'), power: document.querySelector('#power'), fps: document.querySelector('#fps'),
     sound: document.querySelector('#sound'), message: document.querySelector('#message'),
@@ -14,6 +14,7 @@
     resultStats: document.querySelector('#result-stats'), resultStars: document.querySelector('#result-stars'),
     resultObjectives: document.querySelector('#result-objectives'), resultRecord: document.querySelector('#result-record'),
     introRecord: document.querySelector('#intro-record'), mapStars: document.querySelector('#map-stars'), mapRecord: document.querySelector('#map-record'),
+    phaseTwo: document.querySelector('#phase-two'), phaseTwoStatus: document.querySelector('#phase-two-status'), mapTip: document.querySelector('#map-tip'),
     bossHud: document.querySelector('#boss-hud'), bossHealth: document.querySelector('#boss-health')
   };
   const backgroundSources = [
@@ -112,8 +113,15 @@
   }
   function updateMap() {
     const progress = loadProgress();
+    const phaseTwoUnlocked = true;
     ui.mapStars.textContent = `${'★'.repeat(progress.bestStars)}${'☆'.repeat(3 - progress.bestStars)}`;
     ui.mapRecord.textContent = progress.wins > 0 ? `RECORDE ${progress.bestScore} · VITÓRIAS ${progress.wins}` : 'SEM RECORDE · TOQUE PARA JOGAR';
+    ui.phaseTwo.disabled = !phaseTwoUnlocked;
+    ui.phaseTwo.classList.toggle('locked', !phaseTwoUnlocked); ui.phaseTwo.classList.toggle('unlocked', phaseTwoUnlocked);
+    ui.phaseTwo.setAttribute('aria-label', phaseTwoUnlocked ? 'Abrir prévia da Fase 2' : 'Fase 2 bloqueada');
+    ui.phaseTwoStatus.textContent = phaseTwoUnlocked ? 'PRÉVIA DESBLOQUEADA · TOQUE PARA VER' : 'CONCLUA A FASE 1';
+    ui.mapTip.textContent = phaseTwoUnlocked ? 'A ARTE DO ALTO-FORNO ESTÁ LIBERADA PARA INSPEÇÃO' : 'CONCLUA A PRIMEIRA FUNDIÇÃO PARA PREPARAR A PRÓXIMA ROTA';
+    const phaseTwoMark = ui.phaseTwo.querySelector('.lock-mark'); phaseTwoMark.textContent = phaseTwoUnlocked ? '▶' : '◆'; phaseTwoMark.classList.toggle('ready', phaseTwoUnlocked);
   }
 
   function pressState(press) {
@@ -719,6 +727,12 @@
   bindHold('#left','left'); bindHold('#right','right'); bindHold('#jump','jump'); bindHold('#attack','attack');
   document.querySelector('#phase-one').addEventListener('click', () => {
     ui.map.classList.add('hidden'); ui.intro.classList.remove('hidden'); updateIntroRecord();
+  });
+  document.querySelector('#phase-two').addEventListener('click', () => {
+    ui.map.classList.add('hidden'); ui.preview.classList.remove('hidden');
+  });
+  document.querySelector('#preview-back').addEventListener('click', () => {
+    ui.preview.classList.add('hidden'); updateMap(); ui.map.classList.remove('hidden');
   });
   document.querySelector('#start').addEventListener('click', () => {
     initSiren(); if (audioContext?.state === 'suspended') audioContext.resume();
