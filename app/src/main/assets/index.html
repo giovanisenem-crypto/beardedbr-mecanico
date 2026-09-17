@@ -16,6 +16,30 @@
       <div class="bar"><span></span></div>
     </section>
 
+    <section id="stage-map" class="hidden">
+      <div class="map-panel">
+        <div class="eyebrow">ROTA INDUSTRIAL</div>
+        <h1>Mapa da Forja</h1>
+        <p class="map-copy">Escolha o setor e melhore sua avaliação.</p>
+        <div class="stage-route">
+          <button id="phase-one" class="stage-card unlocked">
+            <span class="stage-number">FASE 1</span>
+            <strong>PRIMEIRA FUNDIÇÃO</strong>
+            <span id="map-stars" class="map-stars">☆ ☆ ☆</span>
+            <small id="map-record">SEM RECORDE</small>
+          </button>
+          <div class="route-line"><i></i><i></i><i></i></div>
+          <div class="stage-card locked" aria-label="Fase 2 bloqueada">
+            <span class="stage-number">FASE 2</span>
+            <strong>ALTO-FORNO</strong>
+            <span class="lock-mark">◆</span>
+            <small>PRÓXIMO SETOR</small>
+          </div>
+        </div>
+        <div class="map-tip">CONCLUA A PRIMEIRA FUNDIÇÃO PARA PREPARAR A PRÓXIMA ROTA</div>
+      </div>
+    </section>
+
     <section id="intro" class="hidden">
       <div class="panel">
         <div class="eyebrow">FASE 1 · PRIMEIRA FUNDIÇÃO</div>
@@ -63,7 +87,10 @@
         <div id="result-stats"></div>
         <div id="result-objectives"></div>
         <div id="result-record"></div>
-        <button id="replay">JOGAR NOVAMENTE</button>
+        <div class="result-actions">
+          <button id="replay">JOGAR NOVAMENTE</button>
+          <button id="back-map">VOLTAR AO MAPA</button>
+        </div>
       </div>
     </section>
   </main>

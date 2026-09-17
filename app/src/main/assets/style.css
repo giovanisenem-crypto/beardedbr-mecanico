@@ -5,7 +5,7 @@ body { touch-action: none; }
 #game-shell { position: fixed; inset: 0; overflow: hidden; background: #050607; }
 #game { position: absolute; width: 100%; height: 100%; object-fit: fill; }
 .hidden { display: none !important; }
-#loading, #intro, #message, #result { position: absolute; inset: 0; display: grid; place-items: center; z-index: 20; }
+#loading, #stage-map, #intro, #message, #result { position: absolute; inset: 0; display: grid; place-items: center; z-index: 20; }
 #loading { background: radial-gradient(circle at 50% 60%, #622100 0, #160d08 32%, #040506 72%); }
 .brand { color: #ffb13b; font-size: clamp(28px, 7vw, 92px); font-weight: 950; letter-spacing: .08em; text-shadow: 0 0 24px #ff6a00; }
 .subtitle { color: #f4e7d2; margin-top: 10px; font-size: clamp(10px, 1.6vw, 24px); letter-spacing: .35em; text-align: center; }
@@ -13,6 +13,26 @@ body { touch-action: none; }
 .bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#b93100,#ffbe3c); animation: load 1.25s ease forwards; box-shadow: 0 0 16px #ff7b00; }
 @keyframes load { to { width: 100%; } }
 #intro { background: linear-gradient(90deg, rgba(0,0,0,.86), rgba(0,0,0,.18) 68%); place-items: center start; padding-left: 7vw; }
+#stage-map { background:radial-gradient(circle at 50% 45%,rgba(113,47,9,.42),rgba(3,5,6,.96) 68%),url('art/forge_stage.webp') center/cover; }
+.map-panel { width:min(1120px,90vw); padding:clamp(20px,3vw,42px); border:1px solid #77512f; border-top:6px solid #f08422; background:linear-gradient(145deg,rgba(12,15,17,.97),rgba(37,22,13,.95)); box-shadow:0 22px 90px #000; }
+.map-panel h1 { margin:.18em 0 .08em; font-size:clamp(34px,5vw,70px); }
+.map-copy { margin:0 0 20px; color:#ccc5ba; font-size:clamp(11px,1.3vw,18px); }
+.stage-route { display:grid; grid-template-columns:1fr minmax(80px,180px) 1fr; align-items:center; gap:10px; }
+.stage-card { min-height:210px; padding:22px; border:2px solid #565d60; border-radius:10px; color:#fff; text-align:left; position:relative; overflow:hidden; }
+button.stage-card { font:inherit; }
+.stage-card.unlocked { cursor:pointer; border-color:#ff9a2a; background:linear-gradient(90deg,rgba(9,11,12,.9),rgba(52,27,12,.64)),url('art/forge_stage.webp') center/cover; box-shadow:inset 0 0 28px rgba(255,112,14,.14),0 10px 30px #000; }
+.stage-card.unlocked:active { transform:scale(.985); }
+.stage-card.locked { filter:saturate(.3); background:linear-gradient(135deg,#24292b,#0b0d0e); opacity:.78; }
+.stage-card::after { content:''; position:absolute; inset:auto 0 0; height:5px; background:linear-gradient(90deg,#a63b00,#ffad32); }
+.stage-number { display:block; color:#ff9d32; font:900 clamp(10px,1.1vw,15px)/1 Arial,sans-serif; letter-spacing:.2em; margin-bottom:12px; }
+.stage-card strong { display:block; max-width:85%; font:950 clamp(20px,2.4vw,34px)/1 Arial,sans-serif; letter-spacing:.04em; text-shadow:0 3px 7px #000; }
+.map-stars { display:block; margin-top:22px; color:#ffb630; font:950 clamp(26px,3.4vw,46px)/1 Arial,sans-serif; letter-spacing:.08em; text-shadow:0 0 14px #b85000; }
+.stage-card small { display:block; margin-top:10px; color:#e7dccb; font:900 clamp(9px,1vw,14px)/1 monospace; letter-spacing:.08em; }
+.lock-mark { display:grid; place-items:center; width:58px; height:58px; margin-top:21px; border:2px solid #737a7c; transform:rotate(45deg); color:#aeb4b5; font-size:27px; }
+.lock-mark::first-letter { transform:rotate(-45deg); }
+.route-line { display:flex; align-items:center; justify-content:space-around; height:12px; border-top:3px solid #8d5b31; border-bottom:3px solid #32271e; background:#111416; }
+.route-line i { width:15px; height:15px; margin-top:-3px; border-radius:50%; background:#ff8522; box-shadow:0 0 14px #ff5e00; }
+.map-tip { margin-top:18px; color:#b6aca0; font:800 clamp(9px,1vw,13px)/1.2 Arial,sans-serif; letter-spacing:.12em; }
 .panel { width: min(500px, 46vw); padding: clamp(18px, 3vw, 38px); border-left: 5px solid #f58220; background: linear-gradient(135deg, rgba(12,15,18,.96), rgba(30,20,14,.86)); box-shadow: 0 18px 80px #000; }
 .eyebrow { color: #ff9d32; letter-spacing: .22em; font-weight: 800; font-size: clamp(9px, 1.2vw, 16px); }
 h1 { margin: .24em 0; font-size: clamp(30px, 5vw, 66px); line-height: .95; }
@@ -52,4 +72,6 @@ h1 { margin: .24em 0; font-size: clamp(30px, 5vw, 66px); line-height: .95; }
 #result-objectives .done { color:#b8ffc8; border-color:#4fad68; background:rgba(18,79,35,.34); }
 #result-record { color:#fff0c4; font:950 clamp(10px,1.15vw,15px)/1.3 monospace; margin-top:12px; letter-spacing:.06em; }
 #replay { margin-top: 18px; min-height: 50px; padding: 0 28px; border: 1px solid #ffc36a; background: linear-gradient(#ff9b2f,#c84c00); color: #fff; font-weight: 950; letter-spacing: .08em; }
-@media (max-height: 430px) { #hud { gap: 9px; } #status { max-width: 24vw; overflow: hidden; white-space: nowrap; } #fps { display:none; } #boss-hud { top:56px; width:42vw; } .result-panel { padding:16px 28px; } .result-panel h2 { font-size:30px; margin:.12em 0; } #result-stars { font-size:38px; } #result-stats { font-size:12px; line-height:1.35; } #result-objectives { margin-top:7px; } #result-record { margin-top:7px; } #replay { margin-top:9px; min-height:40px; } #left,#right { width: 72px; height: 72px; } #jump { width: 82px; height: 82px; } #attack { width: 66px; height: 66px; } }
+.result-actions { display:flex; justify-content:center; gap:10px; }
+#back-map { margin-top:18px; min-height:50px; padding:0 24px; border:1px solid #747a7c; background:linear-gradient(#343a3d,#15191b); color:#fff; font-weight:900; letter-spacing:.08em; }
+@media (max-height: 430px) { #hud { gap: 9px; } #status { max-width: 24vw; overflow: hidden; white-space: nowrap; } #fps { display:none; } #boss-hud { top:56px; width:42vw; } .map-panel { padding:16px 28px; } .map-panel h1 { font-size:34px; } .map-copy { margin-bottom:8px; } .stage-card { min-height:145px; padding:14px; } .map-stars { margin-top:10px; font-size:28px; } .stage-card small { margin-top:6px; } .lock-mark { width:38px; height:38px; margin-top:10px; } .map-tip { margin-top:8px; } .result-panel { padding:16px 28px; } .result-panel h2 { font-size:30px; margin:.12em 0; } #result-stars { font-size:38px; } #result-stats { font-size:12px; line-height:1.35; } #result-objectives { margin-top:7px; } #result-record { margin-top:7px; } #replay,#back-map { margin-top:9px; min-height:40px; } #left,#right { width: 72px; height: 72px; } #jump { width: 82px; height: 82px; } #attack { width: 66px; height: 66px; } }

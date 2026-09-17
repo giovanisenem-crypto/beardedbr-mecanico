@@ -6,14 +6,15 @@
   ctx.imageSmoothingEnabled = true;
 
   const ui = {
-    loading: document.querySelector('#loading'), intro: document.querySelector('#intro'),
+    loading: document.querySelector('#loading'), map: document.querySelector('#stage-map'), intro: document.querySelector('#intro'),
     hud: document.querySelector('#hud'), controls: document.querySelector('#controls'),
     status: document.querySelector('#status'), scrap: document.querySelector('#scrap'), score: document.querySelector('#score'), power: document.querySelector('#power'), fps: document.querySelector('#fps'),
     sound: document.querySelector('#sound'), message: document.querySelector('#message'),
     messageText: document.querySelector('#message div'), result: document.querySelector('#result'),
     resultStats: document.querySelector('#result-stats'), resultStars: document.querySelector('#result-stars'),
     resultObjectives: document.querySelector('#result-objectives'), resultRecord: document.querySelector('#result-record'),
-    introRecord: document.querySelector('#intro-record'), bossHud: document.querySelector('#boss-hud'), bossHealth: document.querySelector('#boss-health')
+    introRecord: document.querySelector('#intro-record'), mapStars: document.querySelector('#map-stars'), mapRecord: document.querySelector('#map-record'),
+    bossHud: document.querySelector('#boss-hud'), bossHealth: document.querySelector('#boss-health')
   };
   const backgroundSources = [
     'art/forge_stage.webp', 'art/forge_stage_02.webp', 'art/forge_stage_03.webp',
@@ -30,7 +31,7 @@
   let loaded = 0;
   const ready = () => {
     if (++loaded === backgrounds.length + 6) setTimeout(() => {
-      ui.loading.classList.add('hidden'); ui.intro.classList.remove('hidden'); draw();
+      ui.loading.classList.add('hidden'); ui.map.classList.remove('hidden'); updateMap(); draw();
     }, 650);
   };
   backgrounds.forEach((image, i) => { image.onload = ready; image.src = backgroundSources[i]; });
@@ -108,6 +109,11 @@
   function updateIntroRecord() {
     const progress = loadProgress();
     ui.introRecord.textContent = progress.wins > 0 ? `RECORDE ${progress.bestScore} PTS · ${'★'.repeat(progress.bestStars)}${'☆'.repeat(3 - progress.bestStars)} · VITÓRIAS ${progress.wins}` : 'PRIMEIRA TENTATIVA';
+  }
+  function updateMap() {
+    const progress = loadProgress();
+    ui.mapStars.textContent = `${'★'.repeat(progress.bestStars)}${'☆'.repeat(3 - progress.bestStars)}`;
+    ui.mapRecord.textContent = progress.wins > 0 ? `RECORDE ${progress.bestScore} · VITÓRIAS ${progress.wins}` : 'SEM RECORDE · TOQUE PARA JOGAR';
   }
 
   function pressState(press) {
@@ -334,6 +340,7 @@
     ui.resultObjectives.innerHTML = `<span class="${bronze ? 'done' : ''}">★ DERROTAR<br>O GUARDIÃO</span><span class="${silver ? 'done' : ''}">★ 14 ENGRENAGENS<br>+ 4 SENTINELAS</span><span class="${gold ? 'done' : ''}">★ TUDO COLETADO<br>ATÉ 2 QUEDAS</span>`;
     ui.resultRecord.textContent = `${isRecord ? 'NOVO RECORDE! · ' : ''}MELHOR ${progress.bestScore} PTS · ${progress.bestStars}/3 ESTRELAS`;
     updateIntroRecord();
+    updateMap();
     ui.result.classList.remove('hidden');
   }
   function updateCelebration(dt) {
@@ -710,6 +717,9 @@
     flash('COLETE AS ENGRENAGENS E ALCANCE O PORTÃO', 1500);
   }
   bindHold('#left','left'); bindHold('#right','right'); bindHold('#jump','jump'); bindHold('#attack','attack');
+  document.querySelector('#phase-one').addEventListener('click', () => {
+    ui.map.classList.add('hidden'); ui.intro.classList.remove('hidden'); updateIntroRecord();
+  });
   document.querySelector('#start').addEventListener('click', () => {
     initSiren(); if (audioContext?.state === 'suspended') audioContext.resume();
     ui.intro.classList.add('hidden'); ui.hud.classList.remove('hidden'); ui.controls.classList.remove('hidden');
@@ -717,6 +727,11 @@
   });
   updateIntroRecord();
   document.querySelector('#replay').addEventListener('click', startNewRun);
+  document.querySelector('#back-map').addEventListener('click', () => {
+    playing = false; paused = false; won = false; keys.left = false; keys.right = false; keys.jump = false; keys.attack = false;
+    updateSiren(false); setAudioLevel(); ui.result.classList.add('hidden'); ui.hud.classList.add('hidden'); ui.controls.classList.add('hidden');
+    updateMap(); ui.map.classList.remove('hidden');
+  });
   document.querySelector('#sound').addEventListener('click', () => {
     soundEnabled = !soundEnabled; ui.sound.textContent = soundEnabled ? '♪' : '×';
     setAudioLevel(); if (!soundEnabled) updateSiren(false);
