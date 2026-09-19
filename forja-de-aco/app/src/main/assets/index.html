@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#0b1113"><title>Forja de Aço</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="layout-fix.css"></head>
+<body><main id="app"><audio id="music" preload="auto" loop></audio><span id="fps" class="fps-counter">-- FPS</span>
+<div id="effectToast" class="effect-toast" role="status" aria-live="polite"></div>
+<section id="playStage" class="play-stage hidden" aria-live="polite">
+  <b id="playStageTitle">CARTA JOGADA</b>
+  <div id="playStageCard"></div>
+  <p id="playStageAbility"></p>
+</section>
+<section id="menu" class="screen menu-screen">
+  <div class="brand"><span class="brand-mark">⚙</span><div><h1>FORJA <b>DE AÇO</b></h1><p>CONFLITO INDUSTRIAL</p></div></div>
+  <div class="career-bar"><span>SUCATA <b id="careerScrap">0</b></span><span>VITÓRIAS <b id="careerWins">0</b></span><span>PARTIDAS <b id="careerMatches">0</b></span></div>
+  <div class="menu-heading"><b>ESCOLHA SUA FACÇÃO</b><span>Cada baralho possui uma estratégia e um líder.</span></div>
+  <div id="deckSelect" class="deck-select">
+    <button class="faction-card selected" data-deck="rio"><span class="faction-bg"></span><span class="faction-flag">MR</span><span class="faction-copy"><b>METAL RIO</b><small>CNC • PRECISÃO</small><em>Mestre da Regulagem</em></span></button>
+    <button class="faction-card" data-deck="vulcao"><span class="faction-bg"></span><span class="faction-flag">FV</span><span class="faction-copy"><b>FÁBRICA VULCÃO</b><small>FORÇA • FUNDIDOS</small><em>Mestre Fundidor</em></span></button>
+    <button class="faction-card" data-deck="turbo"><span class="faction-bg"></span><span class="faction-flag">LT</span><span class="faction-copy"><b>LOGÍSTICA TURBO</b><small>VELOCIDADE • COMBOS</small><em>Piloto Turbo</em></span></button>
+    <button class="faction-card" data-deck="elite"><span class="faction-bg"></span><span class="faction-flag">ME</span><span class="faction-copy"><b>MANUTENÇÃO ELITE</b><small>REPAROS • CONTROLE</small><em>Técnica Elite</em></span></button>
+  </div>
+  <div id="deckDetail" class="deck-detail"><span class="leader-icon">⚙</span><div><b>METAL RIO</b><small>+2 para uma máquina CNC por rodada.</small></div></div>
+  <div class="menu-tools">
+    <button id="deckGallery">▦ MONTAR BARALHO</button>
+    <button id="forgeShop">⚒ LOJA DA FORJA</button>
+    <button id="contractBoard">▤ CONTRATOS</button>
+    <button id="campaignBoard">◆ CAMINHO DA FORJA 0/4</button>
+    <label>MODO <select id="gameMode"><option value="ai" selected>CONTRA I.A.</option><option value="local">2 JOGADORES</option></select></label>
+    <label>IA <select id="difficulty"><option value="easy">APRENDIZ</option><option value="normal" selected>NORMAL</option><option value="expert">ESPECIALISTA</option></select></label>
+    <button id="howTo">? COMO JOGAR</button>
+  </div>
+  <button id="play" class="primary">INICIAR PARTIDA <span>›</span></button>
+  <small id="offlineMode" class="offline">OFFLINE CONTRA I.A. • NORMAL</small>
+  <div class="bearded-brand"><b>BEARDEDBR</b><span>PRODUÇÕES</span><small>JOGOS FEITOS NA FORJA</small></div>
+</section>
+
+<section id="game" class="screen game-screen hidden">
+  <div class="game-bg"></div><div id="tableFrame" class="table-frame"><span id="frameName">MOLDURA DA FORJA</span></div><header><button id="back" aria-label="Voltar">‹</button><b id="factionTitle">METAL RIO</b><button id="sound" class="sound-on" aria-label="Música ligada">♪</button><span>RODADA <i id="round">1</i>/3</span></header>
+  <div class="score-panel enemy"><span class="crest" id="enemyCrest">FV</span><div><b id="enemyName">FÁBRICA VULCÃO</b><small>RIVAL • MONTE <i id="enemyPile">12</i> • DESC <i id="enemyDiscard">0</i> • MÃO <i id="enemyHand">10</i></small></div><strong id="enemyScore">0</strong></div>
+  <div id="enemyRows" class="rows enemy-rows"></div>
+  <div class="belt"><i></i><span>LINHA DE PRODUÇÃO</span><i></i></div>
+  <div id="playerRows" class="rows player-rows"></div>
+  <div class="score-panel player"><span class="crest" id="playerCrest">MR</span><div><b id="playerName">METAL RIO</b><small>VOCÊ • MONTE <i id="playerPile">12</i> • DESC <i id="playerDiscard">0</i> • MÃO <i id="playerHand">10</i></small></div><strong id="playerScore">0</strong></div>
+  <div id="cardInfo" class="card-info"><b>ESCOLHA UMA CARTA</b><span>Toque na carta para ver a habilidade.</span></div>
+  <button id="historyBar" class="history-bar"><span>ÚLTIMA AÇÃO</span><b id="lastAction">A partida ainda não começou.</b><i>VER TODAS ›</i></button>
+  <div class="action-row"><span id="tip">Escolha uma carta.</span><button id="leaderPower">⚙ ATIVAR LÍDER</button><button id="playCard" disabled>SELECIONE UMA CARTA</button><button id="pass">PASSAR</button></div>
+  <div id="hand" class="hand"></div>
+</section>
+
+<section id="cardInspect" class="inspect-overlay hidden" aria-modal="true"><div class="inspect-panel"><button id="closeInspect" class="inspect-close" aria-label="Fechar">×</button><small id="inspectOwner">SUA CARTA</small><div id="inspectCardHost"></div><div class="inspect-details"><b>HABILIDADE</b><p id="inspectAbility"></p><b>ÚLTIMA AÇÃO</b><p id="inspectEffect"></p></div><span>Toque fora para fechar</span></div></section>
+<section id="historyModal" class="inspect-overlay hidden" aria-modal="true"><div class="history-panel"><button id="closeHistory" class="inspect-close" aria-label="Fechar">×</button><small>REGISTRO DA PARTIDA</small><h2>AÇÕES DAS CARTAS</h2><div id="historyList" class="history-list"></div><span>As ações mais recentes aparecem primeiro.</span></div></section>
+<section id="deckModal" class="inspect-overlay hidden" aria-modal="true"><div class="deck-panel"><button id="closeDeck" class="inspect-close" aria-label="Fechar">×</button><small>MONTAGEM DO BARALHO</small><h2 id="deckModalTitle">METAL RIO</h2><b id="deckCount" class="deck-count">11 TIPOS • 22 UNIDADES</b><div id="deckGrid" class="deck-grid"></div><div class="deck-actions"><button id="resetDeck">PADRÃO</button><button id="saveDeck">SALVAR BARALHO</button></div><span>Cada tipo possui duas cópias. A carta do amigo é a assinatura obrigatória.</span></div></section>
+<section id="shopModal" class="inspect-overlay hidden" aria-modal="true"><div class="shop-panel"><button id="closeShop" class="inspect-close" aria-label="Fechar">×</button><small>LOJA DA FORJA</small><h2>PERSONALIZAÇÕES</h2><div id="shopWallet" class="shop-wallet">SUCATA DISPONÍVEL <b id="shopScrap">0</b></div><h3>MOLDURAS DA MESA</h3><div id="frameShop" class="shop-grid"></div><h3>TRILHAS DA PARTIDA</h3><div id="musicShop" class="shop-grid"></div><span>Vença contratos para ganhar sucata. Itens comprados ficam desbloqueados para sempre.</span></div></section>
+<section id="contractModal" class="inspect-overlay hidden" aria-modal="true"><div class="contract-panel"><button id="closeContracts" class="inspect-close" aria-label="Fechar">×</button><small>CENTRAL DE CONTRATOS</small><h2>ESCOLHA O DESAFIO</h2><p>O bônus é somado à recompensa normal quando a meta for cumprida.</p><div id="contractGrid" class="contract-grid"></div><span id="contractSelected">CONTRATO SELECIONADO</span></div></section>
+<section id="campaignModal" class="inspect-overlay hidden" aria-modal="true"><div class="campaign-panel"><button id="closeCampaign" class="inspect-close" aria-label="Fechar">×</button><small>CAMINHO DA FORJA</small><h2>CAMPANHA INDUSTRIAL</h2><p>Conquiste quatro contratos em sequência. Cada etapa traz um rival mais preparado e uma recompensa exclusiva.</p><div id="campaignProgress" class="campaign-progress"></div><div id="campaignGrid" class="campaign-grid"></div><span>O progresso é salvo automaticamente.</span></div></section>
+<section id="mulliganModal" class="inspect-overlay hidden" aria-modal="true"><div class="mulligan-panel"><small>PREPARAÇÃO DO TURNO</small><h2>AJUSTE SUA MÃO</h2><p>Selecione até duas cartas para devolver ao monte e comprar substitutas.</p><b id="mulliganCount">0 / 2 TROCAS</b><div id="mulliganGrid" class="mulligan-grid"></div><div class="mulligan-actions"><button id="skipMulligan">MANTER MÃO</button><button id="confirmMulligan">CONFIRMAR TROCAS</button></div></div></section>
+<section id="turnModal" class="inspect-overlay hidden" aria-modal="true"><div class="turn-panel"><small>DUELO LOCAL</small><h2 id="turnTitle">PASSE O CELULAR</h2><p id="turnText">Entregue o aparelho ao próximo jogador. A mão continuará escondida.</p><button id="revealTurn">REVELAR MINHA MÃO</button><span>Ninguém deve olhar até o jogador tocar no botão.</span></div></section>
+<section id="tutorialModal" class="inspect-overlay hidden" aria-modal="true"><div class="tutorial-panel"><small>TUTORIAL DA FORJA</small><i id="tutorialNumber">1 / 5</i><b id="tutorialTitle">ESCOLHA UMA CARTA</b><p id="tutorialText"></p><div class="tutorial-actions"><button id="skipTutorial">PULAR</button><button id="nextTutorial">PRÓXIMO ›</button></div></div></section>
+
+<section id="result" class="screen result-screen hidden"><div class="resultbox"><span class="result-gear">⚙</span><small>FIM DO CONTRATO</small><h2 id="resultTitle">VITÓRIA!</h2><p id="resultText"></p><b id="resultContract" class="result-contract">CONTRATO CONCLUÍDO</b><b id="resultCampaign" class="result-campaign hidden"></b><strong id="resultReward" class="result-reward">+100 SUCATA</strong><button id="again" class="primary">NOVA PARTIDA</button></div></section>
+<section id="victoryFx" class="victory-fx hidden"><div class="victory-cards"><i></i><i></i><i></i></div><div class="victory-emblem"><img src="art/victory_emblem.png" alt=""><small>CONTRATO CONQUISTADO</small><b>VITÓRIA!</b><span>BEARDEDBR PRODUÇÕES</span></div><div class="victory-sparks"><i></i><i></i><i></i><i></i><i></i><i></i></div></section>
+<section id="defeatFx" class="victory-fx defeat-fx hidden"><div class="defeat-shards"><i></i><i></i><i></i><i></i></div><div class="victory-emblem defeat-emblem"><img src="art/victory_emblem.png" alt=""><small>LINHA DE PRODUÇÃO PARADA</small><b>DERROTA</b><span>RECALIBRE O BARALHO</span></div><div class="defeat-smoke"></div></section>
+</main><script src="game.js"></script></body></html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101b20"><title>Empilha Turbo — Corrida de Empilhadeiras</title>
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<canvas id="world" aria-label="Arena do ferro-velho vista de cima"></canvas>
+<div id="vignette"></div>
+<header id="hud" hidden>
+ <div class="hud-item"><span>TEMPO</span><strong id="time">2:30</strong></div>
+ <div class="hud-item"><span>ENTREGAS</span><strong id="deliveries">0 / 3</strong></div>
+ <div class="hud-item cargo-hud"><span id="cargo-label">SEM CARGA</span><strong id="integrity">BUSQUE O PALLET</strong></div>
+ <button id="pause" class="small-button" aria-label="Pausar partida">Ⅱ</button>
+</header>
+<aside id="pilot-hud" hidden><div id="driver-hud" class="portrait portrait-giovani"></div><b id="driver-hud-name">Giovani</b><div class="hud-upgrades"><span class="hud-engine">M <i id="hud-engine">0%</i></span><span class="hud-tires">P <i id="hud-tires">0%</i></span><span class="hud-forks">G <i id="hud-forks">0%</i></span></div></aside>
+<div id="objective" hidden><i></i><span>Busque o pallet 1</span></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="controls" hidden>
+ <div id="joystick" role="region" aria-label="Direcional por toque"><div class="stick-guide">＋</div><div id="knob"></div></div>
+ <div class="right-controls">
+  <button id="turbo" class="round-button turbo-button" aria-label="Segure para usar o turbo"><span>ϟ</span>TURBO<div class="energy-track"><i id="energy"></i></div></button>
+  <button id="action" class="round-button action-button"><span>↥</span><b id="action-label">PEGAR</b></button>
+ </div>
+</div>
+<section id="menu" class="overlay">
+ <div class="menu-card">
+  <div class="eyebrow">BEARDEDBR APRESENTA</div>
+  <h1>EMPILHA<span>TURBO</span></h1>
+  <p class="subtitle">CORRIDA DE EMPILHADEIRAS</p>
+  <p class="intro">Três pallets. Uma fábrica movimentada.<br>Entregue tudo antes que o turno acabe.</p>
+  <div class="instructions"><span><b>1</b> DIRIJA</span><span><b>2</b> PEGUE</span><span><b>3</b> ENTREGUE</span></div>
+  <button id="start" class="primary">INICIAR TURNO <span>→</span></button>
+  <div class="menu-row"><button id="workshop-button" class="secondary">OFICINA <span id="credits-menu">0 CR</span></button><button id="sound" class="secondary" aria-pressed="true">SOM LIGADO</button></div>
+  <p id="best" class="best">Seu primeiro turno começa aqui.</p>
+  <p class="hint">Toque: direcional + PEGAR + TURBO<br>Teclado: WASD / setas · E para pegar · Shift para turbo</p>
+  <p class="credit">Desenvolvedor: Giovani Senem · Protótipo 0.1</p>
+ </div>
+</section>
+<section id="paused" class="overlay" hidden><div class="dialog">
+ <div class="eyebrow">MOTOR EM DESCANSO</div><h2>TURNO PAUSADO</h2>
+ <p>A carga pode esperar um pouquinho.</p>
+ <button id="resume" class="primary">CONTINUAR →</button>
+ <button id="quit" class="secondary">VOLTAR AO INÍCIO</button>
+</div></section>
+<section id="result" class="overlay" hidden><div class="dialog">
+ <div class="eyebrow" id="result-eyebrow">FIM DO TURNO</div><h2 id="result-title">TURNO CONCLUÍDO!</h2>
+ <p id="result-joke"></p>
+ <div class="result-grid"><div><span>PONTUAÇÃO</span><strong id="result-score">0</strong></div><div><span>CRÉDITOS</span><strong id="result-credits">0</strong></div><div class="stars-result"><span>ESTRELAS</span><strong id="result-stars">☆☆☆</strong></div></div>
+ <p id="result-detail"></p><button id="again" class="primary">MAIS UM TURNO →</button>
+ <button id="result-menu" class="secondary">INÍCIO E OFICINA</button>
+</div></section>
+<section id="workshop" class="overlay" hidden><div class="workshop-card">
+ <div class="eyebrow">INVISTA NO SEU EQUIPAMENTO</div><h2>OFICINA DO TURBO</h2><p id="bank"></p>
+ <div id="upgrade-list"></div><button id="close-workshop" class="primary">VOLTAR AO INÍCIO →</button>
+ <p class="hint">Melhorias e recordes ficam salvos neste aparelho.</p>
+</div></section>
+<script src="drivers.js"></script><script src="phases.js"></script><script src="core.js"></script><script src="game.js"></script>
+</body></html>
