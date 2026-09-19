@@ -337,6 +337,7 @@ header #sound:not(.sound-on) {
 .legendary-seal { position:absolute;z-index:4;right:4px;top:28px;padding:2px 4px;border:1px solid #fff0a2;border-radius:3px;background:#0b1415df;color:#ffe274;font:bold 5px Arial;letter-spacing:.4px;text-shadow:0 0 5px currentColor;box-shadow:0 0 7px var(--frame); }
 .card.legendary-special:not(.small-card) { border-color:#fff0a0;box-shadow:0 0 7px var(--frame),0 4px 9px #000; }
 .card.legendary-special:not(.small-card)::after { content:"";position:absolute;z-index:5;inset:-80% -35%;pointer-events:none;background:linear-gradient(115deg,transparent 42%,#ffffff8c 49%,#fff6baad 51%,transparent 58%);transform:translateX(-58%);animation:legendaryShine 3.4s ease-in-out infinite; }
+.card-art.sheet-art::after { inset:78% 0 0;background:linear-gradient(transparent,#1119); }
 @keyframes legendaryShine { 0%,58%{transform:translateX(-58%)}86%,100%{transform:translateX(58%)} }
 .legendary-land { animation:legendaryLand .95s cubic-bezier(.16,.8,.2,1)!important; }
 @keyframes legendaryLand { 0%{transform:scale(2.6) rotateY(80deg);filter:brightness(3);box-shadow:0 0 35px 20px var(--frame)}55%{transform:scale(.82) rotateY(-8deg)}100%{transform:scale(1);filter:brightness(1);box-shadow:0 0 10px var(--frame)} }
