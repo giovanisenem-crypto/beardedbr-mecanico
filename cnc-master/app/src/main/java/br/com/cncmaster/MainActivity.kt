@@ -3,6 +3,7 @@ package br.com.cncmaster
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,13 +53,14 @@ private fun MasterApp() {
     var page by remember { mutableStateOf("Início") }
     Scaffold(containerColor = Background, bottomBar = {
         NavigationBar(containerColor = Panel, contentColor = Gold) {
-            listOf("Início", "Aulas", "Editor", "Biblioteca").forEach { item ->
+            listOf("Início", "Aulas", "Editor", "Simulador", "Biblioteca").forEach { item ->
                 NavigationBarItem(
                     selected = page == item, onClick = { page = item },
                     icon = { Icon(when(item) {
                         "Início" -> Icons.Default.Home
                         "Aulas" -> Icons.Default.School
                         "Editor" -> Icons.Default.Code
+                        "Simulador" -> Icons.Default.ShowChart
                         else -> Icons.Default.MenuBook
                     }, null) },
                     label = { Text(item) },
@@ -76,6 +80,7 @@ private fun MasterApp() {
                 "Início" -> HomeScreen { page = it }
                 "Aulas" -> LessonsScreen()
                 "Editor" -> EditorScreen()
+                "Simulador" -> SimulatorScreen()
                 else -> LibraryScreen()
             }
             Spacer(Modifier.height(18.dp))
@@ -324,5 +329,117 @@ private fun LibraryScreen() {
             Text(g, color = Gold, fontWeight = FontWeight.Black, fontSize = 12.sp, modifier = Modifier.width(83.dp))
             Text(desc, color = Color.White, fontSize = 11.sp, lineHeight = 15.sp)
         }
+    }
+}
+
+
+private data class SimMove(val x: Double, val z: Double, val rapid: Boolean)
+
+private fun parseTurningProgram(source: String): List<SimMove> {
+    val lines = source.lines()
+    val all = mutableListOf<String>()
+    all.addAll(lines)
+    // G71/G70: when a P/Q contour is present, include the contour blocks in the plotted path.
+    val pLine = lines.firstNotNullOfOrNull { Regex("\\bP(\\d+)\\b", RegexOption.IGNORE_CASE).find(it)?.groupValues?.get(1) }
+    val qLine = lines.firstNotNullOfOrNull { Regex("\\bQ(\\d+)\\b", RegexOption.IGNORE_CASE).find(it)?.groupValues?.get(1) }
+    if (pLine != null && qLine != null) {
+        val p = lines.indexOfFirst { Regex("\\bN?$pLine\\b", RegexOption.IGNORE_CASE).containsMatchIn(it.trim()) }
+        val q = lines.indexOfFirst { Regex("\\bN?$qLine\\b", RegexOption.IGNORE_CASE).containsMatchIn(it.trim()) }
+        if (p >= 0 && q > p) all.addAll(lines.subList(p, q + 1))
+    }
+    var x = 50.0
+    var z = 5.0
+    var motion = 0
+    val result = mutableListOf(SimMove(x, z, true))
+    all.forEach { raw ->
+        val line = raw.substringBefore("(").uppercase()
+        Regex("G0?([0123])").findAll(line).forEach { motion = it.groupValues[1].toInt() }
+        val xm = Regex("X(-?\\d+(?:\\.\\d+)?)").find(line)
+        val zm = Regex("Z(-?\\d+(?:\\.\\d+)?)").find(line)
+        if (xm != null || zm != null) {
+            if (xm != null) x = xm.groupValues[1].toDoubleOrNull() ?: x
+            if (zm != null) z = zm.groupValues[1].toDoubleOrNull() ?: z
+            result.add(SimMove(x, z, motion == 0))
+        }
+    }
+    return result
+}
+
+@Composable
+private fun SimulatorScreen() {
+    var program by remember { mutableStateOf("O0200 (EIXO DIDATICO)\nG21 G18 G40 G99\nG54\nT0101\nG97 S900 M03\nG00 X44.0 Z2.0\nG01 X40.0 F0.20\nG01 Z-10.0\nG01 X30.0 Z-20.0\nG01 Z-35.0\nG00 X50.0 Z5.0\nM05\nM30") }
+    var moves by remember { mutableStateOf(parseTurningProgram(program)) }
+    var message by remember { mutableStateOf("Simulação didática pronta. Edite o programa e toque em SIMULAR.") }
+    Header("Visualização de trajetória", "Simulador 2D de torno", "Vista lateral X/Z para estudar aproximação, desbaste e perfil.")
+    Spacer(Modifier.height(12.dp))
+    PanelCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("PEÇA E TRAJETÓRIA", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            Text("X / Z", color = Muted, fontSize = 10.sp)
+        }
+        Spacer(Modifier.height(8.dp))
+        Canvas(Modifier.fillMaxWidth().height(245.dp).background(Color(0xFF101216), RoundedCornerShape(10.dp))) {
+            val left = 34f
+            val right = size.width - 12f
+            val top = 18f
+            val bottom = size.height - 24f
+            val plotW = right - left
+            val plotH = bottom - top
+            for (i in 0..6) {
+                val gx = left + plotW * i / 6f
+                drawLine(Color(0xFF292D34), androidx.compose.ui.geometry.Offset(gx, top), androidx.compose.ui.geometry.Offset(gx, bottom), 1f)
+            }
+            for (i in 0..5) {
+                val gy = top + plotH * i / 5f
+                drawLine(Color(0xFF292D34), androidx.compose.ui.geometry.Offset(left, gy), androidx.compose.ui.geometry.Offset(right, gy), 1f)
+            }
+            val sx = { z: Double -> left + ((z + 5.0) / 50.0).toFloat() * plotW }
+            val sy = { x: Double -> bottom - (x / 60.0).toFloat() * plotH }
+            val stockTop = sy(50.0)
+            val stockBottom = sy(0.0)
+            drawRect(Color(0xFF555B65), androidx.compose.ui.geometry.Offset(sx(0.0), stockTop), androidx.compose.ui.geometry.Size(sx(40.0) - sx(0.0), stockBottom - stockTop))
+            drawLine(Gold, androidx.compose.ui.geometry.Offset(left, bottom), androidx.compose.ui.geometry.Offset(right, bottom), 1.5f)
+            drawLine(Gold, androidx.compose.ui.geometry.Offset(left, top), androidx.compose.ui.geometry.Offset(left, bottom), 1.5f)
+            moves.zipWithNext().forEach { (a, b) ->
+                drawLine(if (b.rapid) Gold else Green, androidx.compose.ui.geometry.Offset(sx(a.z), sy(a.x)), androidx.compose.ui.geometry.Offset(sx(b.z), sy(b.x)), 3f)
+                drawCircle(if (b.rapid) Gold else Green, 3f, androidx.compose.ui.geometry.Offset(sx(b.z), sy(b.x)))
+            }
+            drawContext.canvas.nativeCanvas.drawText("X", 8f, top + 8f, android.graphics.Paint().apply { color = android.graphics.Color.LTGRAY; textSize = 11f })
+            drawContext.canvas.nativeCanvas.drawText("Z", right - 4f, size.height - 5f, android.graphics.Paint().apply { color = android.graphics.Color.LTGRAY; textSize = 11f })
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(9.dp).background(Gold, RoundedCornerShape(5.dp))); Spacer(Modifier.width(5.dp)); Text("Rápido G00", color = Muted, fontSize = 9.sp) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(9.dp).background(Green, RoundedCornerShape(5.dp))); Spacer(Modifier.width(5.dp)); Text("Corte G01", color = Muted, fontSize = 9.sp) }
+        }
+        Text("Trajetória interpretada: ${moves.size} posições", color = GoldLight, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    }
+    Spacer(Modifier.height(10.dp))
+    Text("PROGRAMA FANUC", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+    Column(Modifier.fillMaxWidth().background(Color(0xFF111318), RoundedCornerShape(13.dp)).padding(12.dp)) {
+        BasicTextField(value = program, onValueChange = { program = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 190.dp).padding(4.dp), textStyle = androidx.compose.ui.text.TextStyle(color = GoldLight, fontSize = 12.sp, lineHeight = 18.sp))
+    }
+    Spacer(Modifier.height(9.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = {
+            moves = parseTurningProgram(program)
+            message = if (moves.size > 1) "Trajetória atualizada. Verde: avanço G01. Dourado: rápido G00." else "Não encontrei movimentos X/Z. Confira o programa."
+        }, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Background), modifier = Modifier.weight(1f)) {
+            Text("SIMULAR", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+        }
+        OutlinedButton(onClick = {
+            program = "O0200 (EIXO DIDATICO)\nG21 G18 G40 G99\nG54\nT0101\nG97 S900 M03\nG00 X44.0 Z2.0\nG01 X40.0 F0.20\nG01 Z-10.0\nG01 X30.0 Z-20.0\nG01 Z-35.0\nG00 X50.0 Z5.0\nM05\nM30"
+            moves = parseTurningProgram(program)
+            message = "Exemplo restaurado."
+        }, border = androidx.compose.foundation.BorderStroke(1.dp, Gold), colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold)) {
+            Text("EXEMPLO", fontSize = 10.sp)
+        }
+    }
+    Spacer(Modifier.height(8.dp))
+    PanelCard { Text(message, color = Color.White, fontSize = 11.sp, lineHeight = 16.sp) }
+    PanelCard {
+        Text("LIMITES DESTA SIMULAÇÃO", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text("Esta é uma visualização didática simplificada de posições X/Z. Não simula remoção real de material, ferramenta, castanha, colisões, compensações, aceleração, arcos G02/G03 nem valida ciclos G71/G70. Não use como prova de segurança ou para liberar programa na máquina.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
     }
 }
