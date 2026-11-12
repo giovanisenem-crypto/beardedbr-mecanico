@@ -405,8 +405,6 @@ private fun SimulatorScreen() {
                 drawLine(if (b.rapid) Gold else Green, androidx.compose.ui.geometry.Offset(sx(a.z), sy(a.x)), androidx.compose.ui.geometry.Offset(sx(b.z), sy(b.x)), 3f)
                 drawCircle(if (b.rapid) Gold else Green, 3f, androidx.compose.ui.geometry.Offset(sx(b.z), sy(b.x)))
             }
-            drawContext.canvas.nativeCanvas.drawText("X", 8f, top + 8f, android.graphics.Paint().apply { color = android.graphics.Color.LTGRAY; textSize = 11f })
-            drawContext.canvas.nativeCanvas.drawText("Z", right - 4f, size.height - 5f, android.graphics.Paint().apply { color = android.graphics.Color.LTGRAY; textSize = 11f })
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
