@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 private val Gold = Color(0xFFD6AD60)
 private val GoldLight = Color(0xFFF0D49A)
@@ -367,69 +368,144 @@ private fun parseTurningProgram(source: String): List<SimMove> {
 
 @Composable
 private fun SimulatorScreen() {
-    var program by remember { mutableStateOf("O0200 (EIXO DIDATICO)\nG21 G18 G40 G99\nG54\nT0101\nG97 S900 M03\nG00 X44.0 Z2.0\nG01 X40.0 F0.20\nG01 Z-10.0\nG01 X30.0 Z-20.0\nG01 Z-35.0\nG00 X50.0 Z5.0\nM05\nM30") }
+    val example = "O0200 (EIXO DIDATICO)\nG21 G18 G40 G99\nG54\nT0101\nG97 S900 M03\nG00 X44.0 Z2.0\nG01 X40.0 F0.20\nG01 Z-10.0\nG01 X30.0 Z-20.0\nG01 Z-35.0\nG00 X50.0 Z5.0\nM05\nM30"
+    var program by remember { mutableStateOf(example) }
     var moves by remember { mutableStateOf(parseTurningProgram(program)) }
-    var message by remember { mutableStateOf("Simulação didática pronta. Edite o programa e toque em SIMULAR.") }
-    Header("Visualização de trajetória", "Simulador 2D de torno", "Vista lateral X/Z para estudar aproximação, desbaste e perfil.")
+    var step by remember { mutableIntStateOf(0) }
+    var playing by remember { mutableStateOf(false) }
+    var speed by remember { mutableFloatStateOf(1f) }
+    var message by remember { mutableStateOf("Toque em INICIAR para acompanhar a ferramenta e ver o perfil sendo usinado.") }
+    val current = moves.getOrElse(step) { SimMove(44.0, 2.0, true) }
+
+    LaunchedEffect(playing, step, moves.size, speed) {
+        if (playing) {
+            if (step >= moves.lastIndex) playing = false
+            else {
+                delay((650f / speed).toLong().coerceAtLeast(80L))
+                step = (step + 1).coerceAtMost(moves.lastIndex)
+                if (step >= moves.lastIndex) playing = false
+            }
+        }
+    }
+
+    Header("Simulação de usinagem", "Torno CNC em movimento", "Acompanhe a ferramenta no eixo X/Z e veja o perfil da peça mudar durante o avanço.")
     Spacer(Modifier.height(12.dp))
     PanelCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("PEÇA E TRAJETÓRIA", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.weight(1f))
-            Text("X / Z", color = Muted, fontSize = 10.sp)
+            Column(Modifier.weight(1f)) {
+                Text("SIMULAÇÃO AO VIVO", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(if (playing) "Ferramenta em movimento" else if (step >= moves.lastIndex) "Programa concluído" else "Pronto para simular", color = if (playing) Green else Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+            Text("X " + "%.1f".format(current.x) + "\nZ " + "%.1f".format(current.z), color = GoldLight, fontSize = 12.sp, fontWeight = FontWeight.Bold, lineHeight = 18.sp)
         }
-        Spacer(Modifier.height(8.dp))
-        Canvas(Modifier.fillMaxWidth().height(245.dp).background(Color(0xFF101216), RoundedCornerShape(10.dp))) {
-            val left = 34f
-            val right = size.width - 12f
+        Spacer(Modifier.height(10.dp))
+        Canvas(Modifier.fillMaxWidth().height(270.dp).background(Color(0xFF101820), RoundedCornerShape(12.dp))) {
+            val left = 28f
+            val right = size.width - 16f
             val top = 18f
-            val bottom = size.height - 24f
-            val plotW = right - left
-            val plotH = bottom - top
-            for (i in 0..6) {
-                val gx = left + plotW * i / 6f
-                drawLine(Color(0xFF292D34), androidx.compose.ui.geometry.Offset(gx, top), androidx.compose.ui.geometry.Offset(gx, bottom), 1f)
+            val bottom = size.height - 34f
+            val w = right - left
+            val h = bottom - top
+            val px = { z: Double -> left + (((z + 40.0) / 45.0).toFloat().coerceIn(0f, 1f) * w) }
+            val py = { x: Double -> bottom - ((x / 55.0).toFloat().coerceIn(0f, 1f) * h) }
+            for (i in 0..9) {
+                val gx = left + w * i / 9f
+                drawLine(Color(0xFF293743), androidx.compose.ui.geometry.Offset(gx, top), androidx.compose.ui.geometry.Offset(gx, bottom), 1f)
             }
             for (i in 0..5) {
-                val gy = top + plotH * i / 5f
-                drawLine(Color(0xFF292D34), androidx.compose.ui.geometry.Offset(left, gy), androidx.compose.ui.geometry.Offset(right, gy), 1f)
+                val gy = top + h * i / 5f
+                drawLine(Color(0xFF293743), androidx.compose.ui.geometry.Offset(left, gy), androidx.compose.ui.geometry.Offset(right, gy), 1f)
             }
-            val sx = { z: Double -> left + ((z + 5.0) / 50.0).toFloat() * plotW }
-            val sy = { x: Double -> bottom - (x / 60.0).toFloat() * plotH }
-            val stockTop = sy(50.0)
-            val stockBottom = sy(0.0)
-            drawRect(Color(0xFF555B65), androidx.compose.ui.geometry.Offset(sx(0.0), stockTop), androidx.compose.ui.geometry.Size(sx(40.0) - sx(0.0), stockBottom - stockTop))
-            drawLine(Gold, androidx.compose.ui.geometry.Offset(left, bottom), androidx.compose.ui.geometry.Offset(right, bottom), 1.5f)
-            drawLine(Gold, androidx.compose.ui.geometry.Offset(left, top), androidx.compose.ui.geometry.Offset(left, bottom), 1.5f)
-            moves.zipWithNext().forEach { (a, b) ->
-                drawLine(if (b.rapid) Gold else Green, androidx.compose.ui.geometry.Offset(sx(a.z), sy(a.x)), androidx.compose.ui.geometry.Offset(sx(b.z), sy(b.x)), 3f)
-                drawCircle(if (b.rapid) Gold else Green, 3f, androidx.compose.ui.geometry.Offset(sx(b.z), sy(b.x)))
+            drawLine(Color(0xFF8A929B), androidx.compose.ui.geometry.Offset(left, py(0.0)), androidx.compose.ui.geometry.Offset(right, py(0.0)), 1.5f)
+
+            val profile = MutableList(91) { 44.0 }
+            for (i in 0 until step.coerceAtMost(moves.lastIndex)) {
+                val a = moves[i]
+                val b = moves[i + 1]
+                if (!b.rapid) {
+                    for (j in 0..80) {
+                        val t = j.toDouble() / 80.0
+                        val z = a.z + (b.z - a.z) * t
+                        val x = a.x + (b.x - a.x) * t
+                        val idx = (((z + 40.0) / 45.0) * 90.0).toInt().coerceIn(0, 90)
+                        profile[idx] = minOf(profile[idx], x)
+                    }
+                }
+            }
+            val stock = Path()
+            stock.moveTo(px(-40.0), py(profile[0]))
+            for (i in 1..90) stock.lineTo(px(-40.0 + i * 0.5), py(profile[i]))
+            stock.lineTo(px(5.0), py(0.0))
+            stock.lineTo(px(-40.0), py(0.0))
+            stock.close()
+            drawPath(stock, Color(0xFF788694))
+            drawPath(stock, Color(0xFFB7C2CC), style = Stroke(width = 2f))
+
+            for (i in 0 until step.coerceAtMost(moves.lastIndex)) {
+                val a = moves[i]
+                val b = moves[i + 1]
+                val c = if (b.rapid) Color(0xFFFFC857) else Color(0xFF45D6A0)
+                drawLine(c, androidx.compose.ui.geometry.Offset(px(a.z), py(a.x)), androidx.compose.ui.geometry.Offset(px(b.z), py(b.x)), 3.5f)
+            }
+            val tx = px(current.z)
+            val ty = py(current.x)
+            drawLine(Color(0xFF4CC9F0), androidx.compose.ui.geometry.Offset(tx + 24f, ty - 27f), androidx.compose.ui.geometry.Offset(tx + 3f, ty - 3f), 7f)
+            drawLine(Color(0xFFE7F6FF), androidx.compose.ui.geometry.Offset(tx + 3f, ty - 3f), androidx.compose.ui.geometry.Offset(tx, ty), 3f)
+            drawCircle(Color(0xFFFF6B5F), 5f, androidx.compose.ui.geometry.Offset(tx, ty))
+            drawLine(Color(0xFF4CC9F0), androidx.compose.ui.geometry.Offset(tx + 24f, ty - 27f), androidx.compose.ui.geometry.Offset(tx + 44f, ty - 27f), 5f)
+        }
+        Spacer(Modifier.height(9.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(9.dp).background(Color(0xFF788694), RoundedCornerShape(5.dp))); Spacer(Modifier.width(4.dp)); Text("Peça", color = Muted, fontSize = 9.sp) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(9.dp).background(Color(0xFFFFC857), RoundedCornerShape(5.dp))); Spacer(Modifier.width(4.dp)); Text("G00", color = Muted, fontSize = 9.sp) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(9.dp).background(Color(0xFF45D6A0), RoundedCornerShape(5.dp))); Spacer(Modifier.width(4.dp)); Text("G01 corte", color = Muted, fontSize = 9.sp) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(9.dp).background(Color(0xFF4CC9F0), RoundedCornerShape(5.dp))); Spacer(Modifier.width(4.dp)); Text("Ferramenta", color = Muted, fontSize = 9.sp) }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text("Bloco " + (step + 1) + " de " + moves.size + "  •  " + if (current.rapid) "G00 rápido" else "G01 avanço", color = GoldLight, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Slider(value = step.toFloat(), onValueChange = { step = it.toInt(); playing = false }, valueRange = 0f..moves.lastIndex.coerceAtLeast(1).toFloat(), enabled = moves.size > 1)
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = {
+                if (step >= moves.lastIndex) step = 0
+                playing = !playing
+                message = if (playing) "Executando movimentos interpretados do programa." else "Simulação pausada."
+            }, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Background), modifier = Modifier.weight(1f)) {
+                Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null)
+                Text(if (playing) "PAUSAR" else "INICIAR", fontWeight = FontWeight.Bold, fontSize = 10.sp)
+            }
+            OutlinedButton(onClick = { playing = false; step = 0 }, border = androidx.compose.foundation.BorderStroke(1.dp, Gold), colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold)) {
+                Icon(Icons.Default.RestartAlt, null)
+                Text("REINICIAR", fontSize = 10.sp)
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(9.dp).background(Gold, RoundedCornerShape(5.dp))); Spacer(Modifier.width(5.dp)); Text("Rápido G00", color = Muted, fontSize = 9.sp) }
-            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(9.dp).background(Green, RoundedCornerShape(5.dp))); Spacer(Modifier.width(5.dp)); Text("Corte G01", color = Muted, fontSize = 9.sp) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("VELOCIDADE", color = Muted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(8.dp))
+            Slider(value = speed, onValueChange = { speed = it }, valueRange = 0.5f..3f, modifier = Modifier.weight(1f))
+            Text("%.1fx".format(speed), color = GoldLight, fontSize = 10.sp)
         }
-        Text("Trajetória interpretada: ${moves.size} posições", color = GoldLight, fontSize = 11.sp, fontWeight = FontWeight.Bold)
     }
     Spacer(Modifier.height(10.dp))
     Text("PROGRAMA FANUC", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-    Column(Modifier.fillMaxWidth().background(Color(0xFF111318), RoundedCornerShape(13.dp)).padding(12.dp)) {
-        BasicTextField(value = program, onValueChange = { program = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 190.dp).padding(4.dp), textStyle = androidx.compose.ui.text.TextStyle(color = GoldLight, fontSize = 12.sp, lineHeight = 18.sp))
+    Column(Modifier.fillMaxWidth().background(Color(0xFF111820), RoundedCornerShape(13.dp)).padding(12.dp)) {
+        BasicTextField(value = program, onValueChange = { program = it; playing = false }, modifier = Modifier.fillMaxWidth().heightIn(min = 170.dp).padding(4.dp), textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFFFD98A), fontSize = 12.sp, lineHeight = 18.sp))
     }
     Spacer(Modifier.height(9.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = {
+            playing = false
             moves = parseTurningProgram(program)
-            message = if (moves.size > 1) "Trajetória atualizada. Verde: avanço G01. Dourado: rápido G00." else "Não encontrei movimentos X/Z. Confira o programa."
+            step = 0
+            message = if (moves.size > 1) "Programa interpretado: " + moves.size + " posições X/Z. Inicie a animação." else "Não encontrei movimentos X/Z. Confira os blocos."
         }, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Background), modifier = Modifier.weight(1f)) {
-            Text("SIMULAR", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("CARREGAR PROGRAMA", fontWeight = FontWeight.Bold, fontSize = 10.sp)
         }
         OutlinedButton(onClick = {
-            program = "O0200 (EIXO DIDATICO)\nG21 G18 G40 G99\nG54\nT0101\nG97 S900 M03\nG00 X44.0 Z2.0\nG01 X40.0 F0.20\nG01 Z-10.0\nG01 X30.0 Z-20.0\nG01 Z-35.0\nG00 X50.0 Z5.0\nM05\nM30"
-            moves = parseTurningProgram(program)
-            message = "Exemplo restaurado."
+            playing = false
+            program = example
+            moves = parseTurningProgram(example)
+            step = 0
+            message = "Exemplo de eixo restaurado."
         }, border = androidx.compose.foundation.BorderStroke(1.dp, Gold), colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold)) {
             Text("EXEMPLO", fontSize = 10.sp)
         }
@@ -437,7 +513,7 @@ private fun SimulatorScreen() {
     Spacer(Modifier.height(8.dp))
     PanelCard { Text(message, color = Color.White, fontSize = 11.sp, lineHeight = 16.sp) }
     PanelCard {
-        Text("LIMITES DESTA SIMULAÇÃO", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        Text("Esta é uma visualização didática simplificada de posições X/Z. Não simula remoção real de material, ferramenta, castanha, colisões, compensações, aceleração, arcos G02/G03 nem valida ciclos G71/G70. Não use como prova de segurança ou para liberar programa na máquina.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+        Text("O QUE ESTA VERSÃO SIMULA", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text("Animação dos pontos X/Z e alteração didática do perfil lateral da barra durante movimentos G01. Interpreta apenas movimentos lineares simples G00/G01. Ainda não é uma simulação 3D nem valida arcos, ciclos, compensações, castanha, colisões ou sintaxe completa do Fanuc. Confira tudo no simulador da máquina e siga os procedimentos de segurança da fábrica.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
     }
 }
